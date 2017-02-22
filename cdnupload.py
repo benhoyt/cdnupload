@@ -35,12 +35,12 @@ def load_key_map():
         return json.load(f)
 """
 
-from urllib.parse import urlparse
 import argparse
 import hashlib
 import logging
 import mimetypes
 import os
+import re
 import shutil
 
 # TODO: S3Destination
@@ -131,35 +131,6 @@ class FileDestination(Destination):
         os.remove(os.path.join(self.root, key))
 
 
-class S3Destination(Destination):
-    def __init__(self, s3_url=None, bucket_name=None, key_prefix=None):
-        if s3_url is not None:
-            parsed = urlparse(s3_url)
-            if parsed.scheme != 's3':
-                raise ValueError('s3_url must start with s3://')
-            if not parsed.netloc:
-                raise ValueErrro('s3_url must include a bucket name')
-            bucket_name = parsed.netloc
-            key_prefix = parsed.path.lstrip('/')
-        elif bucket_name is None or key_prefix is None:
-            raise TypeError('you must specify either s3_url or bucket_name and key_prefix')
-
-        self.bucket_name = bucket_name
-        self.key_prefix = key_prefix
-
-    def __str__(self):
-        return 's3://{}/{}'.format(self.bucket_name, self.key_prefix)
-
-    def keys(self):
-        pass
-
-    def upload(self, key, source_path, content_type):
-        pass
-
-    def delete(self, key):
-        pass
-
-
 def upload(source_root, destination, force=False, dry_run=False,
            hash_length=DEFAULT_HASH_LENGTH):
     source_key_map = build_key_map(source_root, hash_length=hash_length)
@@ -192,11 +163,12 @@ def upload(source_root, destination, force=False, dry_run=False,
         content_type = mimetypes.guess_type(rel_path)[0]
         logger.warning('%s %s to %s (%s)', verb, rel_path, key, content_type)
         if not dry_run:
+            source_path = os.path.join(source_root, rel_path)
             destination.upload(key, source_path, content_type)
         num_uploaded += 1
 
     logger.info('finished upload: uploaded %d, skipped %d',
-                num_uploaded, len(source_paths) - num_uploaded)
+                num_uploaded, len(source_key_map) - num_uploaded)
     return (num_scanned, num_uploaded)
 
 
@@ -254,8 +226,20 @@ def main():
 
     logging.basicConfig(level=args.log_level, format='%(message)s')
 
-    if args.destination.startswith('s3://'):
-        destination = S3Destination(s3_url=args.destination)
+    match = re.match(r'(\w+)://', args.destination)
+    if match:
+        scheme = match.group(1)
+        module_name = 'cdnupload_' + scheme
+        try:
+            module = __import__(module_name)
+        except ImportError:
+            # TODO: what if cdnupload_s3.py exists but boto3 is not installed?
+            parser.error("unknown destination scheme {!r} (can't import {})".format(
+                    scheme, module_name))
+        if not hasattr(module, 'Destination'):
+            parser.error('{} module has no Destination class'.format(module_name))
+        destination_class = getattr(module, 'Destination')
+        destination = destination_class(args.destination)
     else:
         destination = FileDestination(args.destination)
 
