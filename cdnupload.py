@@ -216,6 +216,8 @@ def main():
                         help='source directory')
     parser.add_argument('destination',
                         help='destination directory (or s3://bucket/path)')
+    parser.add_argument('dest_args', nargs='*',
+                        help='Destination() class args, for example access-key=XYZ')
     parser.add_argument('-a', '--action', choices=['upload', 'delete'], default='upload',
                         help='action to perform, default %(default)r')
     parser.add_argument('-d', '--dry-run', action='store_true',
@@ -238,6 +240,16 @@ def main():
     }
     logging.basicConfig(level=log_levels[args.log_level], format='%(message)s')
 
+    dest_kwargs = {}
+    for arg in args.dest_args:
+        if '=' not in arg:
+            name = arg
+            value = True
+        else:
+            name, value = arg.split('=', 1)
+        name = name.replace('-', '_')
+        dest_kwargs[name] = value
+
     match = re.match(r'(\w+)://', args.destination)
     if match:
         scheme = match.group(1)
@@ -251,9 +263,9 @@ def main():
         if not hasattr(module, 'Destination'):
             parser.error('{} module has no Destination class'.format(module_name))
         destination_class = getattr(module, 'Destination')
-        destination = destination_class(args.destination)
+        destination = destination_class(args.destination, **dest_kwargs)
     else:
-        destination = FileDestination(args.destination)
+        destination = FileDestination(args.destination, **dest_kwargs)
 
     if args.action == 'upload':
         upload(args.source, destination, force=args.force,
