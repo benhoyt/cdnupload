@@ -217,14 +217,21 @@ def main():
                         help='show what we would upload or delete instead of actually doing it')
     parser.add_argument('-f', '--force', action='store_true',
                         help='force upload even if destination file already exists')
-    parser.add_argument('-l', '--hash-length', type=int, default=DEFAULT_HASH_LENGTH,
+    parser.add_argument('-s', '--hash-length', type=int, default=DEFAULT_HASH_LENGTH,
                         help='number of chars of hash to use (default %(default)d)')
-    parser.add_argument('-o', '--log-level',
-                        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], default='INFO',
-                        help='set logging level (DEBUG=verbose, INFO=default, WARNING=quiet, ERROR=errors, CRITICAL=off)')
+    parser.add_argument('-l', '--log-level', default='default',
+                        choices=['verbose', 'default', 'quiet', 'errors-only', 'off'],
+                        help='set logging level')
     args = parser.parse_args()
 
-    logging.basicConfig(level=args.log_level, format='%(message)s')
+    log_levels = {
+        'verbose': logging.DEBUG,
+        'default': logging.INFO,
+        'quiet': logging.WARNING,
+        'errors-only': logging.ERROR,
+        'off': logging.CRITICAL,
+    }
+    logging.basicConfig(level=log_levels[args.log_level], format='%(message)s')
 
     match = re.match(r'(\w+)://', args.destination)
     if match:
