@@ -206,11 +206,16 @@ def delete(source_root, destination, dry_run=False,
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    description = (
+        'Upload static files from given source directory to destination directory or '
+        'S3 bucket, with content-based hash in filenames for versioning.'
+    )
+
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument('source',
-                        help='source directory to upload from')
+                        help='source directory')
     parser.add_argument('destination',
-                        help='destination directory (or s3://bucket/path) to upload to')
+                        help='destination directory (or s3://bucket/path)')
     parser.add_argument('-a', '--action', choices=['upload', 'delete'], default='upload',
                         help='action to perform, default %(default)r')
     parser.add_argument('-d', '--dry-run', action='store_true',
