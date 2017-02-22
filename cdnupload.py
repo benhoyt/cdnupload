@@ -1,19 +1,8 @@
+"""Upload static files to directory or CDN, using content-based hash for versioning.
 
-# TODO: exception handling
-# TODO: warn about text files on Windows
-# TODO: tests
-# TODO: python2 support
+Example usage:
 
-"""
 _keys_by_path = {}
-
-
-def static_url(rel_path):
-    return _keys_by_path[rel_path]
-
-
-# put this in cdnupload.py
-
 
 def init_server():
     global _keys_by_path
@@ -21,13 +10,14 @@ def init_server():
     # OR
     _keys_by_path = load_key_map()
 
-    def static_url(url):
+    def static_url(rel_path):
+        return settings.static_prefix + _keys_by_path[rel_path]
     flask_env.filters['static_url'] = static_url
 
 
 def save_key_map():
     with open('static_key_map.json', 'w') as f:
-        json.dump(f, build_key_map('static/'))
+        json.dump(f, build_key_map('static/'), sort_keys=True, indent=4)
 
 
 def load_key_map():
@@ -35,20 +25,20 @@ def load_key_map():
         return json.load(f)
 """
 
+# TODO: exception handling
+# TODO: warn about text files on Windows and git or svn auto CRLF mode
+# TODO: tests
+# TODO: python2 support
+
 import argparse
 import hashlib
 import logging
-import mimetypes
 import os
 import re
 import shutil
 
-# TODO: S3Destination
-# import boto3
-
 
 DEFAULT_HASH_LENGTH = 16
-
 
 logger = logging.getLogger('cdnupload')
 
@@ -101,7 +91,7 @@ class Destination(object):
     def keys(self):
         raise NotImplementedError
 
-    def upload(self, key, source_path, content_type):
+    def upload(self, key, source_path):
         raise NotImplementedError
 
     def delete(self, key):
@@ -122,7 +112,7 @@ class FileDestination(Destination):
                 key = os.path.relpath(path, self.root)
                 yield key.replace('\\', '/')
 
-    def upload(self, key, source_path, content_type):
+    def upload(self, key, source_path):
         dest_path = os.path.join(self.root, key)
         os.makedirs(os.path.dirname(dest_path), exist_ok=True) # TODO: old Python versions?
         shutil.copyfile(source_path, dest_path)
@@ -160,11 +150,10 @@ def upload(source_root, destination, force=False, dry_run=False,
             verb = 'would force upload' if dry_run else 'force uploading'
         else:
             verb = 'would upload' if dry_run else 'uploading'
-        content_type = mimetypes.guess_type(rel_path)[0]
-        logger.warning('%s %s to %s (%s)', verb, rel_path, key, content_type)
+        logger.warning('%s %s to %s', verb, rel_path, key)
         if not dry_run:
             source_path = os.path.join(source_root, rel_path)
-            destination.upload(key, source_path, content_type)
+            destination.upload(key, source_path)
         num_uploaded += 1
 
     logger.info('finished upload: uploaded %d, skipped %d',

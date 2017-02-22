@@ -1,5 +1,6 @@
 
 from urllib.parse import urlparse
+import mimetypes
 
 import cdnupload
 
@@ -20,8 +21,8 @@ class Destination(cdnupload.Destination):
     def keys(self):
         pass
 
-    def upload(self, key, source_path, content_type):
-        pass
+    def upload(self, key, source_path):
+        content_type = mimetypes.guess_type(source_path)[0]
 
     def delete(self, key):
         pass
