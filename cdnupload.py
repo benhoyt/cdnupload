@@ -242,11 +242,9 @@ def main():
 
     dest_kwargs = {}
     for arg in args.dest_args:
-        if '=' not in arg:
-            name = arg
+        name, sep, value = arg.partition('=')
+        if not sep:
             value = True
-        else:
-            name, value = arg.split('=', 1)
         name = name.replace('-', '_')
         dest_kwargs[name] = value
 
