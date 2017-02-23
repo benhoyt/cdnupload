@@ -1,4 +1,7 @@
 
+# TODO: move to cdnupload.py
+# TODO: only import boto3 at runtime so it's not required for just FileDestination
+
 from urllib.parse import urlparse
 import mimetypes
 

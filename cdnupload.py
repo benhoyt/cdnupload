@@ -25,8 +25,9 @@ def load_key_map():
         return json.load(f)
 """
 
-# TODO: exception handling
-# TODO: warn about text files on Windows and git or svn auto CRLF mode
+# TODO: handle text files (or warn on Windows and git or svn auto CRLF mode)
+# TODO: includes/excludes/.prefix
+# TODO: docstrings
 # TODO: tests
 # TODO: python2 support
 
@@ -36,6 +37,7 @@ import logging
 import os
 import re
 import shutil
+import sys
 
 
 DEFAULT_HASH_LENGTH = 16
@@ -70,7 +72,6 @@ def make_key(rel_path, file_hash, hash_length=DEFAULT_HASH_LENGTH):
 
 
 def walk_files(source_root):
-    # TODO: includes/excludes/.prefix
     for root, dirs, files in os.walk(source_root):
         for file in files:
             yield os.path.join(root, file)
@@ -85,6 +86,17 @@ def build_key_map(source_root, hash_length=DEFAULT_HASH_LENGTH):
         key = make_key(rel_path, file_hash, hash_length=hash_length)
         keys_by_path[rel_path] = key
     return keys_by_path
+
+
+class DestinationError(Exception):
+    def __init__(self, error, key=None):
+        self.error = error
+        self.key = key
+
+    def __str__(self):
+        return str(self.error)
+
+    __repr__ = __str__
 
 
 class Destination(object):
@@ -114,7 +126,7 @@ class FileDestination(Destination):
 
     def upload(self, key, source_path):
         dest_path = os.path.join(self.root, key)
-        os.makedirs(os.path.dirname(dest_path), exist_ok=True) # TODO: old Python versions?
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
         shutil.copyfile(source_path, dest_path)
 
     def delete(self, key):
@@ -122,9 +134,13 @@ class FileDestination(Destination):
 
 
 def upload(source_root, destination, force=False, dry_run=False,
-           hash_length=DEFAULT_HASH_LENGTH):
+           hash_length=DEFAULT_HASH_LENGTH, continue_on_errors=False):
     source_key_map = build_key_map(source_root, hash_length=hash_length)
-    dest_keys = set(destination.keys())
+
+    try:
+        dest_keys = set(destination.keys())
+    except Exception as error:
+        raise DestinationError(error)
 
     options = []
     if force:
@@ -139,6 +155,7 @@ def upload(source_root, destination, force=False, dry_run=False,
 
     num_scanned = 0
     num_uploaded = 0
+    num_errors = 0
     for rel_path, key in sorted(source_key_map.items()):
         num_scanned += 1
 
@@ -153,19 +170,31 @@ def upload(source_root, destination, force=False, dry_run=False,
         logger.warning('%s %s to %s', verb, rel_path, key)
         if not dry_run:
             source_path = os.path.join(source_root, rel_path)
-            destination.upload(key, source_path)
-        num_uploaded += 1
+            try:
+                destination.upload(key, source_path)
+                num_uploaded += 1
+            except Exception as error:
+                if not continue_on_errors:
+                    raise DestinationError(error, key=key)
+                logger.error('ERROR uploading to %s: %s', key, error)
+                num_errors += 1
+        else:
+            num_uploaded += 1
 
-    logger.info('finished upload: uploaded %d, skipped %d',
-                num_uploaded, len(source_key_map) - num_uploaded)
-    return (num_scanned, num_uploaded)
+    logger.info('finished upload: uploaded %d, skipped %d, errors with %d',
+                num_uploaded, len(source_key_map) - num_uploaded, num_errors)
+    return (num_scanned, num_uploaded, num_errors)
 
 
 def delete(source_root, destination, dry_run=False,
-           hash_length=DEFAULT_HASH_LENGTH):
+           hash_length=DEFAULT_HASH_LENGTH, continue_on_errors=True):
     source_key_map = build_key_map(source_root, hash_length=hash_length)
     source_keys = set(source_key_map.values())
-    dest_keys = set(destination.keys())
+
+    try:
+        dest_keys = set(destination.keys())
+    except Exception as error:
+        raise DestinationError(error)
 
     options = []
     if dry_run:
@@ -178,20 +207,31 @@ def delete(source_root, destination, dry_run=False,
 
     num_scanned = 0
     num_deleted = 0
+    num_errors = 0
     for key in dest_keys:
         num_scanned += 1
 
         if key in source_keys:
-            logging.debug('still using %s, skipping', key)
+            logger.debug('still using %s, skipping', key)
             continue
 
         verb = 'would delete' if dry_run else 'deleting'
         logger.warning('%s %s', verb, key)
         if not dry_run:
-            destination.delete(key)
-        num_deleted += 1
+            try:
+                destination.delete(key)
+                num_deleted += 1
+            except Exception as error:
+                if not continue_on_errors:
+                    raise DestinationError(error, key=key)
+                logger.error('ERROR deleting %s: %s', key, error)
+                num_errors += 1
+        else:
+            num_deleted += 1
 
-    logger.info('finished delete: deleted %d', num_deleted)
+    logger.info('finished delete: deleted %d, errors with %d',
+                num_deleted, num_errors)
+    return (num_scanned, num_deleted, num_errors)
 
 
 def main():
@@ -209,15 +249,17 @@ def main():
                         help='Destination() class args, for example access-key=XYZ')
     parser.add_argument('-a', '--action', choices=['upload', 'delete'], default='upload',
                         help='action to perform, default %(default)r')
+    parser.add_argument('-c', '--continue-on-errors', action='store_true',
+                        help='continue after destination errors (default is to stop on first error)')
     parser.add_argument('-d', '--dry-run', action='store_true',
                         help='show what we would upload or delete instead of actually doing it')
     parser.add_argument('-f', '--force', action='store_true',
                         help='force upload even if destination file already exists')
-    parser.add_argument('-s', '--hash-length', type=int, default=DEFAULT_HASH_LENGTH,
-                        help='number of chars of hash to use (default %(default)d)')
     parser.add_argument('-l', '--log-level', default='default',
                         choices=['verbose', 'default', 'quiet', 'errors-only', 'off'],
                         help='set logging level')
+    parser.add_argument('-s', '--hash-length', type=int, default=DEFAULT_HASH_LENGTH,
+                        help='number of chars of hash to use (default %(default)d)')
     args = parser.parse_args()
 
     log_levels = {
@@ -243,25 +285,41 @@ def main():
         module_name = 'cdnupload_' + scheme
         try:
             module = __import__(module_name)
-        except ImportError:
-            # TODO: what if cdnupload_s3.py exists but boto3 is not installed?
-            parser.error("unknown destination scheme {!r} (can't import {})".format(
-                    scheme, module_name))
+        except ImportError as error:
+            parser.error("can't import {} for scheme {!r}: {}".format(
+                    module_name, scheme, error))
         if not hasattr(module, 'Destination'):
             parser.error('{} module has no Destination class'.format(module_name))
         destination_class = getattr(module, 'Destination')
-        destination = destination_class(args.destination, **dest_kwargs)
     else:
-        destination = FileDestination(args.destination, **dest_kwargs)
+        destination_class = FileDestination
+    destination = destination_class(args.destination, **dest_kwargs)
 
-    if args.action == 'upload':
-        upload(args.source, destination, force=args.force,
-               dry_run=args.dry_run, hash_length=args.hash_length)
-    elif args.action == 'delete':
-        delete(args.source, destination, dry_run=args.dry_run,
-               hash_length=args.hash_length)
-    else:
-        assert 'unexpected action {!r}'.format(args.action)
+    try:
+        if args.action == 'upload':
+            _, _, num_errors = upload(
+                args.source,
+                destination,
+                force=args.force,
+                dry_run=args.dry_run,
+                hash_length=args.hash_length,
+                continue_on_errors=args.continue_on_errors,
+            )
+        elif args.action == 'delete':
+            _, _, num_errors = delete(
+                args.source,
+                destination,
+                dry_run=args.dry_run,
+                hash_length=args.hash_length,
+                continue_on_errors=args.continue_on_errors,
+            )
+        else:
+            assert 'unexpected action {!r}'.format(args.action)
+    except DestinationError as error:
+        logger.error('ERROR with destination: %s', error)
+        num_errors = 1
+
+    sys.exit(1 if num_errors else 0)
 
 
 if __name__ == '__main__':
