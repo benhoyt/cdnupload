@@ -34,10 +34,12 @@ def load_key_map():
 import argparse
 import hashlib
 import logging
+import mimetypes
 import os
 import re
 import shutil
 import sys
+import urllib.parse
 
 
 DEFAULT_HASH_LENGTH = 16
@@ -131,6 +133,32 @@ class FileDestination(Destination):
 
     def delete(self, key):
         os.remove(os.path.join(self.root, key))
+
+
+class S3Destination(Destination):
+    def __init__(self, s3_url):
+        parsed = urllib.parse.urlparse(s3_url)
+        if parsed.scheme != 's3':
+            raise ValueError('s3_url must start with s3://')
+        if not parsed.netloc:
+            raise ValueErrro('s3_url must include a bucket name')
+        self.bucket_name = parsed.netloc
+        self.key_prefix = parsed.path.lstrip('/')  # TODO: should we ensure trailing slash?
+
+    def __str__(self):
+        return 's3://{}/{}'.format(self.bucket_name, self.key_prefix)
+
+    def keys(self):
+        return []
+        # TODO
+
+    def upload(self, key, source_path):
+        content_type = mimetypes.guess_type(source_path)[0]
+        # TODO
+
+    def delete(self, key):
+        pass
+        # TODO
 
 
 def upload(source_root, destination, force=False, dry_run=False,
@@ -279,18 +307,21 @@ def main():
         name = name.replace('-', '_')
         dest_kwargs[name] = value
 
-    match = re.match(r'(\w+)://', args.destination)
+    match = re.match(r'(\w+):', args.destination)
     if match:
         scheme = match.group(1)
-        module_name = 'cdnupload_' + scheme
-        try:
-            module = __import__(module_name)
-        except ImportError as error:
-            parser.error("can't import {} for scheme {!r}: {}".format(
-                    module_name, scheme, error))
-        if not hasattr(module, 'Destination'):
-            parser.error('{} module has no Destination class'.format(module_name))
-        destination_class = getattr(module, 'Destination')
+        if scheme == 's3':
+            destination_class = S3Destination
+        else:
+            module_name = 'cdnupload_' + scheme
+            try:
+                module = __import__(module_name)
+            except ImportError as error:
+                parser.error("can't import handler for scheme {!r}: {}".format(
+                        scheme, error))
+            if not hasattr(module, 'Destination'):
+                parser.error('{} module has no Destination class'.format(module_name))
+            destination_class = getattr(module, 'Destination')
     else:
         destination_class = FileDestination
     destination = destination_class(args.destination, **dest_kwargs)
