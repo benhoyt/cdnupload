@@ -30,6 +30,7 @@ def load_key_map():
 # TODO: docstrings
 # TODO: tests
 # TODO: python2 support
+# TODO: README, LICENSE, etc
 
 import argparse
 import hashlib
@@ -137,6 +138,12 @@ class FileDestination(Destination):
 
 class S3Destination(Destination):
     def __init__(self, s3_url):
+        # Import boto3 at runtime so it's not required to use cdnupload.py
+        try:
+            import boto3
+        except ImportError:
+            raise Exception('boto3 must be installed to upload to S3, try: pip install boto3')
+
         parsed = urllib.parse.urlparse(s3_url)
         if parsed.scheme != 's3':
             raise ValueError('s3_url must start with s3://')
@@ -324,7 +331,12 @@ def main():
             destination_class = getattr(module, 'Destination')
     else:
         destination_class = FileDestination
-    destination = destination_class(args.destination, **dest_kwargs)
+
+    try:
+        destination = destination_class(args.destination, **dest_kwargs)
+    except Exception as error:
+        logger.error('ERROR creating %s instance: %s', destination_class.__name__, error)
+        sys.exit(1)
 
     try:
         if args.action == 'upload':
