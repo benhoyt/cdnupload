@@ -26,13 +26,14 @@ def load_key_map():
 """
 
 # TODO: handle text files (or warn on Windows and git or svn auto CRLF mode)
-# TODO: includes/excludes/.prefix
+# TODO: add something like --dest-help=s3 to show help/args on the Destination class
 # TODO: docstrings
 # TODO: tests
 # TODO: python2 support
 # TODO: README, LICENSE, etc
 
 import argparse
+import fnmatch
 import hashlib
 import logging
 import mimetypes
@@ -42,6 +43,8 @@ import shutil
 import sys
 import urllib.parse
 
+
+__version__ = '1.0.0'
 
 DEFAULT_HASH_LENGTH = 16
 
@@ -74,17 +77,49 @@ def make_key(rel_path, file_hash, hash_length=DEFAULT_HASH_LENGTH):
     return key
 
 
-def walk_files(source_root):
+def walk_files(source_root, dot_names=False, include=None, exclude=None):
+    """Generate list of relative paths starting at source_root and walking the
+    directory tree recursively.
+
+    Include directories and files starting with '.' if dot_names is True
+    (exclude them by default). If include is specified, only include relative
+    paths that match include (per fnmatch), or one of the includes if tuple or
+    list is given. If exclude is specified, exclude any relative paths that
+    match exclude, or one of the excludes if tuple or list is given.
+    """
+    if sys.platform == 'win32' and isinstance(source_root, bytes):
+        # Because os.walk() doesn't handle Unicode chars in walked paths on
+        # Windows if a bytes path is specified (easy on Python 2.x with "str")
+        source_root = source_root.decode(sys.getfilesystemencoding())
+
+    if include and not isinstance(include, (tuple, list)):
+        include = [include]
+    if exclude and not isinstance(exclude, (tuple, list)):
+        exclude = [exclude]
+
     for root, dirs, files in os.walk(source_root):
+        if not dot_names:
+            dirs[:] = [d for d in dirs if not d.startswith('.')]
+
         for file in files:
-            yield os.path.join(root, file)
+            if not dot_names and file.startswith('.'):
+                continue
+            path = os.path.relpath(os.path.join(root, file), source_root)
+            if include and not any(fnmatch.fnmatch(path, i) for i in include):
+                continue
+            if exclude and any(fnmatch.fnmatch(path, e) for e in exclude):
+                continue
+
+            yield path
 
 
-def build_key_map(source_root, hash_length=DEFAULT_HASH_LENGTH):
+def build_key_map(source_root, hash_length=DEFAULT_HASH_LENGTH,
+                  dot_names=False, include=None, exclude=None):
     keys_by_path = {}
-    for full_path in walk_files(source_root):
+    for rel_path in walk_files(source_root, dot_names=dot_names,
+                               include=include, exclude=exclude):
+        full_path = os.path.join(source_root, rel_path)
         file_hash = hash_file(full_path)
-        rel_path = os.path.relpath(full_path, source_root)
         rel_path = rel_path.replace('\\', '/')
         key = make_key(rel_path, file_hash, hash_length=hash_length)
         keys_by_path[rel_path] = key
@@ -169,8 +204,12 @@ class S3Destination(Destination):
 
 
 def upload(source_root, destination, force=False, dry_run=False,
-           hash_length=DEFAULT_HASH_LENGTH, continue_on_errors=False):
-    source_key_map = build_key_map(source_root, hash_length=hash_length)
+           hash_length=DEFAULT_HASH_LENGTH, continue_on_errors=False,
+           dot_names=False, include=None, exclude=None):
+    source_key_map = build_key_map(
+        source_root, hash_length=hash_length,
+        dot_names=dot_names, include=include, exclude=exclude,
+    )
 
     try:
         dest_keys = set(destination.keys())
@@ -222,8 +261,12 @@ def upload(source_root, destination, force=False, dry_run=False,
 
 
 def delete(source_root, destination, dry_run=False,
-           hash_length=DEFAULT_HASH_LENGTH, continue_on_errors=True):
-    source_key_map = build_key_map(source_root, hash_length=hash_length)
+           hash_length=DEFAULT_HASH_LENGTH, continue_on_errors=True,
+           dot_names=False, include=None, exclude=None):
+    source_key_map = build_key_map(
+        source_root, hash_length=hash_length,
+        dot_names=dot_names, include=include, exclude=exclude,
+    )
     source_keys = set(source_key_map.values())
 
     try:
@@ -281,27 +324,35 @@ def main():
     parser.add_argument('destination',
                         help='destination directory (or s3://bucket/path)')
     parser.add_argument('dest_args', nargs='*',
-                        help='Destination() class args, for example access-key=XYZ')
+                        help='optional Destination() keyword args, for example access-key=XYZ')
     parser.add_argument('-a', '--action', choices=['upload', 'delete'], default='upload',
-                        help='action to perform, default %(default)r')
+                        help='action to perform, default %(default)s')
     parser.add_argument('-c', '--continue-on-errors', action='store_true',
-                        help='continue after destination errors (default is to stop on first error)')
+                        help='continue after upload or delete errors (default is to stop on first error)')
     parser.add_argument('-d', '--dry-run', action='store_true',
                         help='show what we would upload or delete instead of actually doing it')
     parser.add_argument('-f', '--force', action='store_true',
                         help='force upload even if destination file already exists')
+    parser.add_argument('-i', '--include', action='append',
+                        help='only include source file if its relative path matches, '
+                             'for example *.png or images/* (may be specified multiple times)')
     parser.add_argument('-l', '--log-level', default='default',
-                        choices=['verbose', 'default', 'quiet', 'errors-only', 'off'],
+                        choices=['verbose', 'default', 'quiet', 'errors', 'off'],
                         help='set logging level')
     parser.add_argument('-s', '--hash-length', type=int, default=DEFAULT_HASH_LENGTH,
                         help='number of chars of hash to use (default %(default)d)')
+    parser.add_argument('-t', '--dot-names', action='store_true',
+                        help='include source files and directories starting with "." (exclude by default)')
+    parser.add_argument('-x', '--exclude', action='append',
+                        help='exclude source file if its relative path matches, '
+                             'for example *.txt or __pycache__/* (may be specified multiple times)')
     args = parser.parse_args()
 
     log_levels = {
         'verbose': logging.DEBUG,
         'default': logging.INFO,
         'quiet': logging.WARNING,
-        'errors-only': logging.ERROR,
+        'errors': logging.ERROR,
         'off': logging.CRITICAL,
     }
     logging.basicConfig(level=log_levels[args.log_level], format='%(message)s')
@@ -338,24 +389,21 @@ def main():
         logger.error('ERROR creating %s instance: %s', destination_class.__name__, error)
         sys.exit(1)
 
+    action_kwargs = dict(
+        source_root=args.source,
+        destination=destination,
+        dry_run=args.dry_run,
+        hash_length=args.hash_length,
+        continue_on_errors=args.continue_on_errors,
+        dot_names=args.dot_names,
+        include=args.include,
+        exclude=args.exclude,
+    )
     try:
         if args.action == 'upload':
-            _, _, num_errors = upload(
-                args.source,
-                destination,
-                force=args.force,
-                dry_run=args.dry_run,
-                hash_length=args.hash_length,
-                continue_on_errors=args.continue_on_errors,
-            )
+            _, _, num_errors = upload(**action_kwargs, force=args.force)
         elif args.action == 'delete':
-            _, _, num_errors = delete(
-                args.source,
-                destination,
-                dry_run=args.dry_run,
-                hash_length=args.hash_length,
-                continue_on_errors=args.continue_on_errors,
-            )
+            _, _, num_errors = delete(**action_kwargs)
         else:
             assert 'unexpected action {!r}'.format(args.action)
     except DestinationError as error:
