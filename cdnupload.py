@@ -27,6 +27,7 @@ def load_key_map():
 
 # TODO: handle text files (or warn on Windows and git or svn auto CRLF mode)
 # TODO: add something like --dest-help=s3 to show help/args on the Destination class
+# TODO: consider adding 'blob {size}\x00' to hash like git
 # TODO: docstrings
 # TODO: tests
 # TODO: python2 support
