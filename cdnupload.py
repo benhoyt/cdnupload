@@ -173,7 +173,9 @@ class FileDestination(Destination):
 
 
 class S3Destination(Destination):
-    def __init__(self, s3_url):
+    def __init__(self, s3_url, access_key=None, secret_key=None,
+                 max_age=365*24*60*60, cache_control='public, max-age={max_age}',
+                 acl='public-read'):
         # Import boto3 at runtime so it's not required to use cdnupload.py
         try:
             import boto3
@@ -186,7 +188,25 @@ class S3Destination(Destination):
         if not parsed.netloc:
             raise ValueErrro('s3_url must include a bucket name')
         self.bucket_name = parsed.netloc
-        self.key_prefix = parsed.path.lstrip('/')  # TODO: should we ensure trailing slash?
+        self.key_prefix = parsed.path.lstrip('/')
+        if self.key_prefix and not self.key_prefix.endswith('/'):
+            self.key_prefix += '/'
+
+        self.access_key = access_key
+        self.secret_key = secret_key
+
+        if cache_control:
+            try:
+                max_age = int(max_age)
+            except (ValueError, TypeError):
+                raise TypeError('max_age must be an integer number of seconds, '
+                                'not {!r}'.format(max_age))
+            self.cache_control = cache_control.format(max_age=max_age)
+        else:
+            # So that cache_control='' means no Cache-Control header
+            self.cache_control = None
+
+        self.acl = acl
 
     def __str__(self):
         return 's3://{}/{}'.format(self.bucket_name, self.key_prefix)
@@ -364,7 +384,14 @@ def main():
         if not sep:
             value = True
         name = name.replace('-', '_')
-        dest_kwargs[name] = value
+        existing = dest_kwargs.get(name)
+        if existing is not None:
+            if isinstance(existing, list):
+                existing.append(value)
+            else:
+                dest_kwargs[name] = [existing, value]
+        else:
+            dest_kwargs[name] = value
 
     match = re.match(r'(\w+):', args.destination)
     if match:
