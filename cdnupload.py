@@ -25,12 +25,11 @@ def load_key_map():
         return json.load(f)
 """
 
-# TODO: finish docstrings
 # TODO: handle text files (or warn on Windows and git or svn auto CRLF mode)
 # TODO: consider adding 'blob {size}\x00' to hash like git
 # TODO: tests
 # TODO: python2 support
-# TODO: README, LICENSE, etc
+# TODO: module docstring, README, LICENSE, etc
 
 from __future__ import print_function
 
@@ -283,6 +282,25 @@ class S3Destination(Destination):
 def upload(source_root, destination, force=False, dry_run=False,
            hash_length=DEFAULT_HASH_LENGTH, continue_on_errors=False,
            dot_names=False, include=None, exclude=None):
+    """Upload missing files from source_root tree to destination (an instance
+    of a Destination subclass). Return tuple of (num_files_scanned,
+    num_uploaded, num_errors).
+
+    The contents of each source file is hashed, and hash_length hex digits of
+    the hash are appended to the destination filename (key) as a "version", so
+    that if a file changes, it's uploaded again under a new filename. For
+    example, 'images/logo.png' will become something like
+    'images/logo_deadbeef12345678.png'.
+
+    If continue_on_errors is True, it will continue uploading other files even
+    if some uploads fail (the default is to raise DestinationError on first
+    error).
+
+    If force is True, upload even if files are there already. If dry_run is
+    True, log what would be uploaded instead of actually uploading. The
+    dot_names, include, and exclude parameters are handled as per the
+    walk_files() function.
+    """
     source_key_map = build_key_map(
         source_root, hash_length=hash_length,
         dot_names=dot_names, include=include, exclude=exclude,
@@ -340,6 +358,18 @@ def upload(source_root, destination, force=False, dry_run=False,
 def delete(source_root, destination, dry_run=False,
            hash_length=DEFAULT_HASH_LENGTH, continue_on_errors=True,
            dot_names=False, include=None, exclude=None):
+    """Delete files from destination (an instance of a Destination subclass)
+    that are no longer present in source_root tree. Return tuple of
+    (num_files_scanned, num_deleted, num_errors).
+
+    If continue_on_errors is True, it will continue deleting other files even
+    if some deletes fail (the default is to raise DestinationError on first
+    error).
+
+    If dry_run is True, log what would be deleted instead of actually
+    deleting. The dot_names, include, and exclude parameters are handled as
+    per the walk_files() function.
+    """
     source_key_map = build_key_map(
         source_root, hash_length=hash_length,
         dot_names=dot_names, include=include, exclude=exclude,
@@ -389,7 +419,14 @@ def delete(source_root, destination, dry_run=False,
     return (num_scanned, num_deleted, num_errors)
 
 
-def main():
+def main(args=None):
+    """Command line endpoint for uploading/deleting. If args not specified,
+    the sys.argv command line arguments are used. Run "cdnupload.py -h" for
+    detailed help on the arguments.
+    """
+    if args is None:
+        args = sys.argv[1:]
+
     description = (
         'Upload static files from given source directory to destination directory or '
         'S3 bucket, with content-based hash in filenames for versioning.'
