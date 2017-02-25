@@ -26,12 +26,13 @@ def load_key_map():
 """
 
 # TODO: handle text files (or warn on Windows and git or svn auto CRLF mode)
-# TODO: add something like --dest-help=s3 to show help/args on the Destination class
 # TODO: consider adding 'blob {size}\x00' to hash like git
 # TODO: docstrings
 # TODO: tests
 # TODO: python2 support
 # TODO: README, LICENSE, etc
+
+from __future__ import print_function
 
 import argparse
 import fnmatch
@@ -42,7 +43,10 @@ import os
 import re
 import shutil
 import sys
-import urllib.parse
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 
 __version__ = '1.0.0'
@@ -150,6 +154,11 @@ class Destination(object):
 
 
 class FileDestination(Destination):
+    """Copies files to a destination directory.
+
+    required argument ("destinaton" command line parameter):
+      root           root of destination directory to copy to
+    """
     def __init__(self, root):
         self.root = root
 
@@ -173,6 +182,20 @@ class FileDestination(Destination):
 
 
 class S3Destination(Destination):
+    """Uploads files to an Amazon S3 bucket using the boto3 library.
+
+    required argument ("destinaton" command line parameter):
+      s3_url         S3 bucket and key prefix in s3://bucket/key/prefix form
+                     (trailing slash is added to key prefix if not present)
+
+    optional arguments:
+      access_key     AWS access key (if not specified, uses credentials in
+                     boto3 environment variables or in ~/.aws/credentials)
+      secret_key     AWS secret key
+      max_age        max-age value for Cache-Control header, in seconds
+      cache_control  full Cache-Control header (overrides max_age)
+      acl            S3 canned ACL (access control list)
+    """
     def __init__(self, s3_url, access_key=None, secret_key=None,
                  max_age=365*24*60*60, cache_control='public, max-age={max_age}',
                  acl='public-read'):
@@ -182,11 +205,11 @@ class S3Destination(Destination):
         except ImportError:
             raise Exception('boto3 must be installed to upload to S3, try: pip install boto3')
 
-        parsed = urllib.parse.urlparse(s3_url)
+        parsed = urlparse(s3_url)
         if parsed.scheme != 's3':
             raise ValueError('s3_url must start with s3://')
         if not parsed.netloc:
-            raise ValueErrro('s3_url must include a bucket name')
+            raise ValueError('s3_url must include a bucket name')
         self.bucket_name = parsed.netloc
         self.key_prefix = parsed.path.lstrip('/')
         if self.key_prefix and not self.key_prefix.endswith('/'):
@@ -346,8 +369,9 @@ def main():
                         help='destination directory (or s3://bucket/path)')
     parser.add_argument('dest_args', nargs='*',
                         help='optional Destination() keyword args, for example access-key=XYZ')
-    parser.add_argument('-a', '--action', choices=['upload', 'delete'], default='upload',
-                        help='action to perform, default %(default)s')
+    parser.add_argument('-a', '--action', choices=['upload', 'delete', 'dest-help'], default='upload',
+                        help='action to perform (upload, delete, or show help '
+                             'for given Destination class), default %(default)s')
     parser.add_argument('-c', '--continue-on-errors', action='store_true',
                         help='continue after upload or delete errors (default is to stop on first error)')
     parser.add_argument('-d', '--dry-run', action='store_true',
@@ -411,6 +435,24 @@ def main():
     else:
         destination_class = FileDestination
 
+    if args.action == 'dest-help':
+        import inspect
+        import textwrap
+
+        arg_spec = inspect.getargspec(destination_class.__init__)
+        args_str = inspect.formatargspec(*arg_spec)
+        if args_str.startswith('(self, '):
+            args_str = '(' + args_str[7:]
+        args_wrapped = textwrap.fill(
+                args_str, width=79, initial_indent=' ' * 4,
+                subsequent_indent=' ' * 5, break_long_words=False,
+                break_on_hyphens=False)
+        print('{}'.format(destination_class.__name__))
+        print(args_wrapped)
+        print()
+        print(inspect.getdoc(destination_class))
+        sys.exit(0)
+
     try:
         destination = destination_class(args.destination, **dest_kwargs)
     except Exception as error:
@@ -429,7 +471,8 @@ def main():
     )
     try:
         if args.action == 'upload':
-            _, _, num_errors = upload(**action_kwargs, force=args.force)
+            action_kwargs['force'] = args.force
+            _, _, num_errors = upload(**action_kwargs)
         elif args.action == 'delete':
             _, _, num_errors = delete(**action_kwargs)
         else:
