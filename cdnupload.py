@@ -25,9 +25,9 @@ def load_key_map():
         return json.load(f)
 """
 
+# TODO: finish docstrings
 # TODO: handle text files (or warn on Windows and git or svn auto CRLF mode)
 # TODO: consider adding 'blob {size}\x00' to hash like git
-# TODO: docstrings
 # TODO: tests
 # TODO: python2 support
 # TODO: README, LICENSE, etc
@@ -120,6 +120,15 @@ def walk_files(source_root, dot_names=False, include=None, exclude=None):
 
 def build_key_map(source_root, hash_length=DEFAULT_HASH_LENGTH,
                   dot_names=False, include=None, exclude=None):
+    """Walk directory tree starting at source_root and build a dict that maps
+    relative path to key including content-based hash (of given length). The
+    dot_names, include, and exclude parameters are handled as per the
+    walk_files() function.
+
+    The relative paths are "canonical", meaning \ is converted to / on
+    Windows, so that users of the mapping can always look up keys using
+    "dir/file.ext" style paths, regardless of operating system.
+    """
     keys_by_path = {}
     for rel_path in walk_files(source_root, dot_names=dot_names,
                                include=include, exclude=exclude):
@@ -132,6 +141,11 @@ def build_key_map(source_root, hash_length=DEFAULT_HASH_LENGTH,
 
 
 class DestinationError(Exception):
+    """Raised when an error occurs accessing the destination (usually
+    uploading or deleting), so that callers can catch a more specific error
+    than just Exception. Where relevant, includes the destination key in
+    question.
+    """
     def __init__(self, error, key=None):
         self.error = error
         self.key = key
@@ -143,13 +157,32 @@ class DestinationError(Exception):
 
 
 class Destination(object):
+    """Subclass this abstract base class to implement a destination uploader,
+    for example uploading to Amazon S3, or to Google Cloud Storage.
+    """
+    def __init__(self, destination, **kwargs):
+        """Initialize instance with given destination "URL", for example
+        /www/static or s3://bucket/key/prefix. Format of destination arg and
+        names of kwargs depend on the subclass.
+        """
+        raise NotImplementedError
+
+    def __str__(self):
+        """Return a human-readable string describing this destination, for
+        example 's3://bucket/key/prefix/'.
+        """
+        raise NotImplementedError
+
     def keys(self):
+        """Yield list of keys currently present on the destination"""
         raise NotImplementedError
 
     def upload(self, key, source_path):
+        """Upload a single file from given source_path to destination at "key"."""
         raise NotImplementedError
 
     def delete(self, key):
+        """Delete a single file on the destination at "key"."""
         raise NotImplementedError
 
 
