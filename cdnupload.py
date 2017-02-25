@@ -1,35 +1,18 @@
-"""Upload static files to directory or CDN, using content-based hash for versioning.
+"""Upload static files to directory or CDN, using content-based hashing.
 
-Example usage:
+Run "python cdnupload.py -h" for command line help. See README.rst for
+documentation, and LICENSE.txt for license information. Visit the project's
+website or GitHub repo for more information:
 
-_keys_by_path = {}
-
-def init_server():
-    global _keys_by_path
-    _keys_by_path = build_key_map('static/')
-    # OR
-    _keys_by_path = load_key_map()
-
-    def static_url(rel_path):
-        return settings.static_prefix + _keys_by_path[rel_path]
-    flask_env.filters['static_url'] = static_url
-
-
-def save_key_map():
-    with open('static_key_map.json', 'w') as f:
-        json.dump(f, build_key_map('static/'), sort_keys=True, indent=4)
-
-
-def load_key_map():
-    with open('static_key_map.json') as f:
-        return json.load(f)
+https://cdnupload.com/
+https://github.com/benhoyt/cdnupload
 """
 
 # TODO: handle text files (or warn on Windows and git or svn auto CRLF mode)
 # TODO: consider adding 'blob {size}\x00' to hash like git
 # TODO: tests
 # TODO: python2 support
-# TODO: module docstring, README, LICENSE, etc
+# TODO: README, LICENSE, etc
 
 from __future__ import print_function
 
