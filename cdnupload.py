@@ -210,15 +210,16 @@ class S3Destination(Destination):
       max_age        max-age value for Cache-Control header, in seconds
       cache_control  full Cache-Control header (overrides max_age)
       acl            S3 canned ACL (access control list)
+      region_name    AWS region name of S3 bucket   # TODO: usually not required?
+      client_args    dict of additional keyword args for boto3 client setup:
+                     boto3.client('s3', ..., **client_args)
+      upload_args    dict of additional keyword args (ExtraArgs) for
+                     client.upload_file() call
     """
     def __init__(self, s3_url, access_key=None, secret_key=None,
                  max_age=365*24*60*60, cache_control='public, max-age={max_age}',
-                 acl='public-read'):
-        # Import boto3 at runtime so it's not required to use cdnupload.py
-        try:
-            import boto3
-        except ImportError:
-            raise Exception('boto3 must be installed to upload to S3, try: pip install boto3')
+                 acl='public-read', region_name=None, client_args=None,
+                 upload_args=None):
 
         parsed = urlparse(s3_url)
         if parsed.scheme != 's3':
@@ -230,36 +231,68 @@ class S3Destination(Destination):
         if self.key_prefix and not self.key_prefix.endswith('/'):
             self.key_prefix += '/'
 
-        self.access_key = access_key
-        self.secret_key = secret_key
-
         if cache_control:
             try:
                 max_age = int(max_age)
             except (ValueError, TypeError):
                 raise TypeError('max_age must be an integer number of seconds, '
                                 'not {!r}'.format(max_age))
-            self.cache_control = cache_control.format(max_age=max_age)
+            cache_control = cache_control.format(max_age=max_age)
         else:
             # So that cache_control='' means no Cache-Control header
-            self.cache_control = None
+            cache_control = None
 
-        self.acl = acl
+        self.upload_args = upload_args or {}
+        if acl is not None:
+            self.upload_args['ACL'] = acl
+        if cache_control is not None:
+            self.upload_args['CacheControl'] = cache_control
+
+        # Import boto3 at runtime so it's not required to use cdnupload.py
+        try:
+            import boto3
+        except ImportError:
+            raise Exception('boto3 must be installed to upload to S3, try: '
+                            'pip install boto3')
+
+        self.s3_client = boto3.client(
+            's3',
+            region_name=region_name,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
+            **(client_args or {}),
+        )
 
     def __str__(self):
         return 's3://{}/{}'.format(self.bucket_name, self.key_prefix)
 
     def keys(self):
-        return []
-        # TODO
+        # TODO: check error handling
+        response = self.s3_client.list_objects(
+            Bucket=self.bucket_name,
+            Delimiter='/',
+            # MaxKeys=123,  # TODO: does this handle tons of keys?
+            Prefix=self.key_prefix,
+        )
+        for obj in response['Contents']:
+            yield obj['Key']
 
     def upload(self, key, source_path):
+        # TODO: check error handling
         content_type = mimetypes.guess_type(source_path)[0]
-        # TODO
+        key = self.key_prefix + key
+
+        extra_args = self.upload_args.copy()
+        if content_type:
+            extra_args['ContentType'] = content_type
+
+        self.s3_client.upload_file(source_path, self.bucket_name, key,
+                                   ExtraArgs=extra_args)
 
     def delete(self, key):
-        pass
-        # TODO
+        # TODO: check error handling
+        key = self.key_prefix + key
+        self.s3_client.delete_object(Bucket=self.bucket_name, Key=key)
 
 
 def upload(source_root, destination, force=False, dry_run=False,
@@ -360,7 +393,7 @@ def delete(source_root, destination, dry_run=False,
     source_keys = set(source_key_map.values())
 
     try:
-        dest_keys = set(destination.keys())
+        dest_keys = sorted(destination.keys())
     except Exception as error:
         raise DestinationError(error)
 
