@@ -6,13 +6,17 @@ website or GitHub repo for more information:
 
 https://cdnupload.com/
 https://github.com/benhoyt/cdnupload
-"""
 
-# TODO: handle text files (or warn on Windows and git or svn auto CRLF mode)
-# TODO: consider adding 'blob {size}\x00' to hash like git
-# TODO: tests
-# TODO: python2 support
-# TODO: README, LICENSE, etc
+TODO:
+* s3
+  - turn off verbose boto3 logs like: Starting new HTTPS connection (1): bucket.s3.amazonaws.com
+  - better auth error handling: ERROR with destination: An error occurred (AccessDenied) when calling the ListObjects operation: Access Denied
+* handle text files (or warn on Windows and git or svn auto CRLF mode)
+* consider adding 'blob {size}\x00' to hash like git
+* tests
+* python2 support
+* README, LICENSE, etc
+"""
 
 from __future__ import print_function
 
