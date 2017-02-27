@@ -235,21 +235,18 @@ class S3Destination(Destination):
         if self.key_prefix and not self.key_prefix.endswith('/'):
             self.key_prefix += '/'
 
-        if cache_control:
+        self.upload_args = upload_args or {}
+
+        if acl and 'ACL' not in self.upload_args:
+            self.upload_args['ACL'] = acl
+
+        if cache_control and 'CacheControl' not in self.upload_args:
             try:
                 max_age = int(max_age)
             except (ValueError, TypeError):
                 raise TypeError('max_age must be an integer number of seconds, '
                                 'not {!r}'.format(max_age))
             cache_control = cache_control.format(max_age=max_age)
-        else:
-            # So that cache_control='' means no Cache-Control header
-            cache_control = None
-
-        self.upload_args = upload_args or {}
-        if acl is not None:
-            self.upload_args['ACL'] = acl
-        if cache_control is not None:
             self.upload_args['CacheControl'] = cache_control
 
         # Import boto3 at runtime so it's not required to use cdnupload.py
@@ -271,15 +268,16 @@ class S3Destination(Destination):
         return 's3://{}/{}'.format(self.bucket_name, self.key_prefix)
 
     def keys(self):
-        # TODO: check error handling
-        response = self.s3_client.list_objects(
+        # TODO: check error handling, test with multiple pages (>1000 keys?)
+        paginator = self.s3_client.get_paginator('list_objects')
+        pages = paginator.paginate(
             Bucket=self.bucket_name,
             Delimiter='/',
-            # MaxKeys=123,  # TODO: does this handle tons of keys?
             Prefix=self.key_prefix,
         )
-        for obj in response['Contents']:
-            yield obj['Key']
+        for response in pages:
+            for obj in response['Contents']:
+                yield obj['Key']
 
     def upload(self, key, source_path):
         # TODO: check error handling
