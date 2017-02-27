@@ -9,11 +9,12 @@ https://github.com/benhoyt/cdnupload
 
 TODO:
 * s3
-  - turn off verbose boto3 logs like: Starting new HTTPS connection (1): bucket.s3.amazonaws.com
   - better auth error handling: ERROR with destination: An error occurred (AccessDenied) when calling the ListObjects operation: Access Denied
 * handle text files (or warn on Windows and git or svn auto CRLF mode)
 * consider adding 'blob {size}\x00' to hash like git
 * tests
+  - test handling of unicode filenames (round trip)
+* add version number to usage string (and maybe -v/--version arg?)
 * python2 support
 * README, LICENSE, etc
 """
@@ -132,12 +133,13 @@ class DestinationError(Exception):
     than just Exception. Where relevant, includes the destination key in
     question.
     """
-    def __init__(self, error, key=None):
-        self.error = error
+    def __init__(self, message, exception, key=None):
+        self.message = message
+        self.exception = exception
         self.key = key
 
     def __str__(self):
-        return str(self.error)
+        return '{}: {}'.format(self.message, self.exception)
 
     __repr__ = __str__
 
@@ -269,11 +271,12 @@ class S3Destination(Destination):
 
     def keys(self):
         # TODO: check error handling, test with multiple pages (>1000 keys?)
-        paginator = self.s3_client.get_paginator('list_objects')
+        paginator = self.s3_client.get_paginator('list_objects_v2')
         pages = paginator.paginate(
             Bucket=self.bucket_name,
             Delimiter='/',
             Prefix=self.key_prefix,
+            PaginationConfig={'PageSize': 1000},
         )
         for response in pages:
             for obj in response['Contents']:
@@ -327,7 +330,7 @@ def upload(source_root, destination, force=False, dry_run=False,
     try:
         dest_keys = set(destination.keys())
     except Exception as error:
-        raise DestinationError(error)
+        raise DestinationError('ERROR listing keys at {}'.format(destination), error)
 
     options = []
     if force:
@@ -362,7 +365,7 @@ def upload(source_root, destination, force=False, dry_run=False,
                 num_uploaded += 1
             except Exception as error:
                 if not continue_on_errors:
-                    raise DestinationError(error, key=key)
+                    raise DestinationError('ERROR uploading to {}'.format(key), error, key=key)
                 logger.error('ERROR uploading to %s: %s', key, error)
                 num_errors += 1
         else:
@@ -397,7 +400,7 @@ def delete(source_root, destination, dry_run=False,
     try:
         dest_keys = sorted(destination.keys())
     except Exception as error:
-        raise DestinationError(error)
+        raise DestinationError('ERROR listing keys at {}'.format(destination), error)
 
     options = []
     if dry_run:
@@ -426,7 +429,7 @@ def delete(source_root, destination, dry_run=False,
                 num_deleted += 1
             except Exception as error:
                 if not continue_on_errors:
-                    raise DestinationError(error, key=key)
+                    raise DestinationError('ERROR deleting {}'.format(key), error, key=key)
                 logger.error('ERROR deleting %s: %s', key, error)
                 num_errors += 1
         else:
@@ -488,7 +491,8 @@ def main(args=None):
         'errors': logging.ERROR,
         'off': logging.CRITICAL,
     }
-    logging.basicConfig(level=log_levels[args.log_level], format='%(message)s')
+    logging.basicConfig(level=logging.WARNING, format='%(message)s')
+    logger.setLevel(log_levels[args.log_level])
 
     dest_kwargs = {}
     for arg in args.dest_args:
@@ -566,7 +570,7 @@ def main(args=None):
         else:
             assert 'unexpected action {!r}'.format(args.action)
     except DestinationError as error:
-        logger.error('ERROR with destination: %s', error)
+        logger.error('%s', error)
         num_errors = 1
 
     sys.exit(1 if num_errors else 0)
