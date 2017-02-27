@@ -14,7 +14,6 @@ TODO:
 * consider adding 'blob {size}\x00' to hash like git
 * tests
   - test handling of unicode filenames (round trip)
-* add version number to usage string (and maybe -v/--version arg?)
 * python2 support
 * README, LICENSE, etc
 """
@@ -448,12 +447,15 @@ def main(args=None):
     if args is None:
         args = sys.argv[1:]
 
-    description = (
-        'Upload static files from given source directory to destination directory or '
-        'S3 bucket, with content-based hash in filenames for versioning.'
-    )
+    description = """
+Upload static files from given source directory to destination directory or
+S3 bucket, with content-based hash in filenames for versioning.
 
-    parser = argparse.ArgumentParser(description=description)
+cdnupload {version} -- Ben Hoyt (c) 2017 -- https://cdnupload.com/
+""".format(version=__version__)
+
+    parser = argparse.ArgumentParser(description=description,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('source',
                         help='source directory')
     parser.add_argument('destination',
@@ -479,6 +481,7 @@ def main(args=None):
                         help='number of chars of hash to use (default %(default)d)')
     parser.add_argument('-t', '--dot-names', action='store_true',
                         help='include source files and directories starting with "." (exclude by default)')
+    parser.add_argument('-v', '--version', action='version', version=__version__)
     parser.add_argument('-x', '--exclude', action='append',
                         help='exclude source file if its relative path matches, '
                              'for example *.txt or __pycache__/* (may be specified multiple times)')
