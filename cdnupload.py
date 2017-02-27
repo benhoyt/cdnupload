@@ -8,10 +8,6 @@ https://cdnupload.com/
 https://github.com/benhoyt/cdnupload
 
 TODO:
-* s3
-  - better auth error handling: ERROR with destination: An error occurred (AccessDenied) when calling the ListObjects operation: Access Denied
-* handle text files (or warn on Windows and git or svn auto CRLF mode)
-* consider adding 'blob {size}\x00' to hash like git
 * tests
   - test handling of unicode filenames (round trip)
 * python2 support
@@ -38,25 +34,34 @@ except ImportError:
 __version__ = '1.0.0'
 
 DEFAULT_HASH_LENGTH = 16
+HASH_CHUNK_SIZE = 64 * 1024
 
 logger = logging.getLogger('cdnupload')
 
 
-def file_chunks(path, mode='rb', chunk_size=64*1024):
-    """Read file at given path in chunks of given size and yield chunks."""
-    with open(path, mode) as file:
-        while True:
-            chunk = file.read(chunk_size)
-            if not chunk:
-                break
-            yield chunk
+def hash_file(path, is_text=None):
+    """Read file at given path and return content hash as hex string.
 
+    If is_text is None, determine whether file is text like Git does (it's
+    treated as text if there's no NUL byte in first 8000 bytes).
 
-def hash_file(path):
-    """Read file at given path and return content hash as hex string."""
-    sha1 = hashlib.sha1()
-    for chunk in file_chunks(path):
-        sha1.update(chunk)
+    If file is text, the line endings are normalized to LF by stripping out
+    any CR characters in the input. This is done to avoid hash differences
+    between line endings on Windows (CR LF) and Linux/macOS (LF), especially
+    with "automatic" line ending conversion when using Git or Subversion.
+    """
+    with open(path, 'rb') as file:
+        chunk = file.read(HASH_CHUNK_SIZE)
+        if is_text is None:
+            is_text = chunk.find(b'\x00', 0, 8000) == -1
+
+        sha1 = hashlib.sha1()
+        while chunk:
+            if is_text:
+                chunk = chunk.replace(b'\r', b'')
+            sha1.update(chunk)
+            chunk = file.read(HASH_CHUNK_SIZE)
+
     return sha1.hexdigest()
 
 
