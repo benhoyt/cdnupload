@@ -455,7 +455,7 @@ def main(args=None):
                         help='source directory')
     parser.add_argument('destination',
                         help='destination directory (or s3://bucket/path)')
-    parser.add_argument('dest_args', nargs='*',
+    parser.add_argument('dest_args', nargs='*', default=[],
                         help='optional Destination() keyword args, for example access-key=XYZ')
     parser.add_argument('-a', '--action', choices=['upload', 'delete', 'dest-help'], default='upload',
                         help='action to perform (upload, delete, or show help '
