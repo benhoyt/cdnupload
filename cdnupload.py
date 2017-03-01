@@ -8,6 +8,7 @@ https://cdnupload.com/
 https://github.com/benhoyt/cdnupload
 
 TODO:
+* FileSource error handling
 * tests
   - test handling of unicode filenames (round trip)
 * python2 support
@@ -34,101 +35,150 @@ except ImportError:
 __version__ = '1.0.0'
 
 DEFAULT_HASH_LENGTH = 16
-HASH_CHUNK_SIZE = 64 * 1024
 
 logger = logging.getLogger('cdnupload')
 
 
-def hash_file(path, is_text=None):
-    """Read file at given path and return content hash as hex string.
+class FileSource(object):
+    """Upload source that recursively returns files from directory tree
+    starting at given root path. See __init__'s docstring for details.
 
-    If is_text is None, determine whether file is text like Git does (it's
-    treated as text if there's no NUL byte in first 8000 bytes).
-
-    If file is text, the line endings are normalized to LF by stripping out
-    any CR characters in the input. This is done to avoid hash differences
-    between line endings on Windows (CR LF) and Linux/macOS (LF), especially
-    with "automatic" line ending conversion when using Git or Subversion.
+    You can subclass this and pass the instance to upload() or delete() if you
+    want to customize advanced behaviour like hash_file()'s text handling.
     """
-    with open(path, 'rb') as file:
-        chunk = file.read(HASH_CHUNK_SIZE)
-        if is_text is None:
-            is_text = chunk.find(b'\x00', 0, 8000) == -1
+    IS_TEXT_BYTES = 8000
 
-        sha1 = hashlib.sha1()
-        while chunk:
-            if is_text:
-                chunk = chunk.replace(b'\r', b'')
-            sha1.update(chunk)
-            chunk = file.read(HASH_CHUNK_SIZE)
+    def __init__(self, root, dot_names=False, include=None, exclude=None,
+                 hash_length=DEFAULT_HASH_LENGTH, hash_chunk_size=64*1024,
+                 hash_class=hashlib.sha1):
+        """Initialize instance for sourcing file from given root directory.
 
-    return sha1.hexdigest()
+        Include directories and files starting with '.' if "dot_names" is True
+        (exclude them by default). If "include" is specified, only include
+        relative paths that match "include" (per fnmatch), or one of the
+        includes if tuple or list is given. If "exclude" is specified, exclude
+        any relative paths that match "exclude", or one of the excludes if
+        tuple or list is given.
 
+        When building a key mapping, "hash_length" characters of the hex
+        content hash are included in the filename. The file is read in
+        "hash_chunk_size" blocks when being hashed. "hash_class" is called
+        to generate the file hashes (you could use hashlib.md5 or something
+        else instead).
+        """
+        self.root = root
+        self.dot_names = dot_names
 
-def make_key(rel_path, file_hash, hash_length=DEFAULT_HASH_LENGTH):
-    """Convert relative path and file hash to key."""
-    rel_file, ext = os.path.splitext(rel_path)
-    key = '{}_{:.{}}{}'.format(rel_file, file_hash, hash_length, ext)
-    key = key.replace('\\', '/')  # ensure \ is converted to / on Windows
-    return key
+        if include and not isinstance(include, (tuple, list)):
+            include = [include]
+        self.include = include
+        if exclude and not isinstance(exclude, (tuple, list)):
+            exclude = [exclude]
+        self.exclude = exclude
 
+        self.hash_length = hash_length
+        self.hash_chunk_size = hash_chunk_size
+        self.hash_class = hash_class
 
-def walk_files(source_root, dot_names=False, include=None, exclude=None):
-    """Generate list of relative paths starting at source_root and walking the
-    directory tree recursively.
+    def __str__(self):
+        """Return a human-readable string describing this source."""
+        return self.root
 
-    Include directories and files starting with '.' if dot_names is True
-    (exclude them by default). If include is specified, only include relative
-    paths that match include (per fnmatch), or one of the includes if tuple or
-    list is given. If exclude is specified, exclude any relative paths that
-    match exclude, or one of the excludes if tuple or list is given.
-    """
-    if sys.platform == 'win32' and isinstance(source_root, bytes):
-        # Because os.walk() doesn't handle Unicode chars in walked paths on
-        # Windows if a bytes path is specified (easy on Python 2.x with "str")
-        source_root = source_root.decode(sys.getfilesystemencoding())
+    def open(self, rel_path):
+        """Open file at given relative path."""
+        path = os.path.join(self.root, rel_path)
+        return open(path, 'rb')
 
-    if include and not isinstance(include, (tuple, list)):
-        include = [include]
-    if exclude and not isinstance(exclude, (tuple, list)):
-        exclude = [exclude]
+    def hash_file(self, rel_path, is_text=None):
+        """Read file at given relative path and return content hash as hex
+        string (hash is SHA-1 hash of content).
 
-    for root, dirs, files in os.walk(source_root):
-        if not dot_names:
-            dirs[:] = [d for d in dirs if not d.startswith('.')]
+        If is_text is None, determine whether file is text like Git does (it's
+        treated as text if there's no NUL byte in first 8000 bytes).
 
-        for file in files:
-            if not dot_names and file.startswith('.'):
-                continue
-            path = os.path.relpath(os.path.join(root, file), source_root)
-            if include and not any(fnmatch.fnmatch(path, i) for i in include):
-                continue
-            if exclude and any(fnmatch.fnmatch(path, e) for e in exclude):
-                continue
+        If file is text, the line endings are normalized to LF by stripping
+        out any CR characters in the input. This is done to avoid hash
+        differences between line endings on Windows (CR LF) and Linux/macOS
+        (LF), especially with "automatic" line ending conversion when using
+        Git or Subversion.
+        """
+        with self.open(rel_path) as file:
+            chunk = file.read(self.hash_chunk_size)
+            if is_text is None:
+                is_text = chunk.find(b'\x00', 0, self.IS_TEXT_BYTES) == -1
 
-            yield path
+            hash_obj = self.hash_class()
+            while chunk:
+                if is_text:
+                    chunk = chunk.replace(b'\r', b'')
+                hash_obj.update(chunk)
+                chunk = file.read(self.hash_chunk_size)
 
+        return hash_obj.hexdigest()
 
-def build_key_map(source_root, hash_length=DEFAULT_HASH_LENGTH,
-                  dot_names=False, include=None, exclude=None):
-    """Walk directory tree starting at source_root and build a dict that maps
-    relative path to key including content-based hash (of given length). The
-    dot_names, include, and exclude parameters are handled as per the
-    walk_files() function.
+    def make_key(self, rel_path, file_hash):
+        """Convert relative path and file hash to destination key, for
+        example, a "rel_path" of 'images/logo.png' would become something like
+        'images/logo_deadbeef12345678.png'.
 
-    The relative paths are "canonical", meaning \ is converted to / on
-    Windows, so that users of the mapping can always look up keys using
-    "dir/file.ext" style paths, regardless of operating system.
-    """
-    keys_by_path = {}
-    for rel_path in walk_files(source_root, dot_names=dot_names,
-                               include=include, exclude=exclude):
-        full_path = os.path.join(source_root, rel_path)
-        file_hash = hash_file(full_path)
-        rel_path = rel_path.replace('\\', '/')
-        key = make_key(rel_path, file_hash, hash_length=hash_length)
-        keys_by_path[rel_path] = key
-    return keys_by_path
+        The number of characters in the hash part of the destiation key is
+        specified by the "hash_length" initializer argument.
+        """
+        rel_file, ext = os.path.splitext(rel_path)
+        key = '{}_{:.{}}{}'.format(rel_file, file_hash, self.hash_length, ext)
+        return key
+
+    def walk_files(self):
+        """Generate list of relative paths starting at the source root and
+        walking the directory tree recursively.
+
+        Relative paths in the yielded values are canonicalized to always
+        use use '/' (forward slash) as a path separator, regardless of running
+        platform.
+        """
+        if sys.platform == 'win32' and isinstance(self.root, bytes):
+            # Because os.walk() doesn't handle Unicode chars in walked paths
+            # on Windows if a bytes path is specified (easy on Python 2.x with
+            # "str")
+            walk_root = self.root.decode(sys.getfilesystemencoding())
+        else:
+            walk_root = self.root
+
+        for root, dirs, files in os.walk(walk_root):
+            if not self.dot_names:
+                dirs[:] = [d for d in dirs if not d.startswith('.')]
+
+            for file in files:
+                if not self.dot_names and file.startswith('.'):
+                    continue
+
+                rel_path = os.path.relpath(os.path.join(root, file), walk_root)
+                rel_path = rel_path.replace('\\', '/')
+
+                if self.include and not any(fnmatch.fnmatch(rel_path, i)
+                                            for i in self.include):
+                    continue
+                if self.exclude and any(fnmatch.fnmatch(rel_path, e)
+                                        for e in self.exclude):
+                    continue
+
+                yield rel_path
+
+    def build_key_map(self):
+        """Walk directory tree starting at source root and build a dict that
+        maps relative path to key including content-based hash.
+
+        The relative paths (keys of the returned dict) are "canonical",
+        meaning '\' is converted to '/' on Windows, so that users of the
+        mapping can always look up keys using 'dir/file.ext' style paths,
+        regardless of operating system.
+        """
+        keys_by_path = {}
+        for rel_path in self.walk_files():
+            file_hash = self.hash_file(rel_path)
+            key = self.make_key(rel_path, file_hash)
+            keys_by_path[rel_path] = key
+        return keys_by_path
 
 
 class DestinationError(Exception):
@@ -137,6 +187,7 @@ class DestinationError(Exception):
     than just Exception. Where relevant, includes the destination key in
     question.
     """
+
     def __init__(self, message, exception, key=None):
         self.message = message
         self.exception = exception
@@ -152,10 +203,11 @@ class Destination(object):
     """Subclass this abstract base class to implement a destination uploader,
     for example uploading to Amazon S3, or to Google Cloud Storage.
     """
+
     def __init__(self, destination, **kwargs):
         """Initialize instance with given destination "URL", for example
-        /www/static or s3://bucket/key/prefix. Format of destination arg and
-        names of kwargs depend on the subclass.
+        '/www/static' or 's3://bucket/key/prefix'. Format of destination arg
+        and names of kwargs depend on the subclass.
         """
         raise NotImplementedError
 
@@ -169,8 +221,10 @@ class Destination(object):
         """Yield list of keys currently present on the destination"""
         raise NotImplementedError
 
-    def upload(self, key, source_path):
-        """Upload a single file from given source_path to destination at "key"."""
+    def upload(self, key, source, rel_path):
+        """Upload single file from source instance and relative path to
+        destination at "key".
+        """
         raise NotImplementedError
 
     def delete(self, key):
@@ -184,6 +238,7 @@ class FileDestination(Destination):
     required argument ("destinaton" command line parameter):
       root           root of destination directory to copy to
     """
+
     def __init__(self, root):
         self.root = root
 
@@ -197,10 +252,12 @@ class FileDestination(Destination):
                 key = os.path.relpath(path, self.root)
                 yield key.replace('\\', '/')
 
-    def upload(self, key, source_path):
+    def upload(self, key, source, rel_path):
         dest_path = os.path.join(self.root, key)
         os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-        shutil.copyfile(source_path, dest_path)
+        with source.open(rel_path) as source_file:
+            with open(dest_path, 'wb') as dest_file:
+                shutil.copyfileobj(source_file, dest_file)
 
     def delete(self, key):
         os.remove(os.path.join(self.root, key))
@@ -220,12 +277,14 @@ class S3Destination(Destination):
       max_age        max-age value for Cache-Control header, in seconds
       cache_control  full Cache-Control header (overrides max_age)
       acl            S3 canned ACL (access control list)
-      region_name    AWS region name of S3 bucket   # TODO: usually not required?
+      region_name    AWS region name of S3 bucket (overrides boto3 default or
+                     value in ~/.aws/config)
       client_args    dict of additional keyword args for boto3 client setup:
                      boto3.client('s3', ..., **client_args)
       upload_args    dict of additional keyword args (ExtraArgs) for
                      client.upload_file() call
     """
+
     def __init__(self, s3_url, access_key=None, secret_key=None,
                  max_age=365*24*60*60, cache_control='public, max-age={max_age}',
                  acl='public-read', region_name=None, client_args=None,
@@ -274,7 +333,7 @@ class S3Destination(Destination):
         return 's3://{}/{}'.format(self.bucket_name, self.key_prefix)
 
     def keys(self):
-        # TODO: check error handling, test with multiple pages (>1000 keys?)
+        # TODO: check error handling, test with multiple pages
         paginator = self.s3_client.get_paginator('list_objects_v2')
         pages = paginator.paginate(
             Bucket=self.bucket_name,
@@ -286,17 +345,18 @@ class S3Destination(Destination):
             for obj in response['Contents']:
                 yield obj['Key']
 
-    def upload(self, key, source_path):
+    def upload(self, key, source, rel_path):
         # TODO: check error handling
-        content_type = mimetypes.guess_type(source_path)[0]
+        content_type = mimetypes.guess_type(rel_path)[0]
         key = self.key_prefix + key
 
         extra_args = self.upload_args.copy()
         if content_type:
             extra_args['ContentType'] = content_type
 
-        self.s3_client.upload_file(source_path, self.bucket_name, key,
-                                   ExtraArgs=extra_args)
+        with source.open(rel_path) as source_file:
+            self.s3_client.upload_fileobj(source_file, self.bucket_name, key,
+                                          ExtraArgs=extra_args)
 
     def delete(self, key):
         # TODO: check error handling
@@ -304,17 +364,19 @@ class S3Destination(Destination):
         self.s3_client.delete_object(Bucket=self.bucket_name, Key=key)
 
 
-def upload(source_root, destination, force=False, dry_run=False,
-           hash_length=DEFAULT_HASH_LENGTH, continue_on_errors=False,
-           dot_names=False, include=None, exclude=None):
-    """Upload missing files from source_root tree to destination (an instance
-    of a Destination subclass). Return tuple of (num_files_scanned,
-    num_uploaded, num_errors).
+def upload(source, destination, force=False, dry_run=False,
+           continue_on_errors=False):
+    """Upload missing files from source to destination (an instance of a
+    Destination subclass). Return tuple of (num_files_scanned, num_uploaded,
+    num_errors).
 
-    The contents of each source file is hashed, and hash_length hex digits of
-    the hash are appended to the destination filename (key) as a "version", so
-    that if a file changes, it's uploaded again under a new filename. For
-    example, 'images/logo.png' will become something like
+    If "source" is a string, FileSource(source) is used as the source
+    instance. Otherwise "source" must be a FileSource instance.
+
+    The contents of each source file is hashed by the source and included in
+    the destination key. This is so that if a file changes, it's uploaded
+    again under a new filename to break caching. For example,
+    'images/logo.png' will become something like
     'images/logo_deadbeef12345678.png'.
 
     If continue_on_errors is True, it will continue uploading other files even
@@ -322,14 +384,12 @@ def upload(source_root, destination, force=False, dry_run=False,
     error).
 
     If force is True, upload even if files are there already. If dry_run is
-    True, log what would be uploaded instead of actually uploading. The
-    dot_names, include, and exclude parameters are handled as per the
-    walk_files() function.
+    True, log what would be uploaded instead of actually uploading.
     """
-    source_key_map = build_key_map(
-        source_root, hash_length=hash_length,
-        dot_names=dot_names, include=include, exclude=exclude,
-    )
+    if isinstance(source, (str, bytes)):
+        source = FileSource(source)
+
+    source_key_map = source.build_key_map()
 
     try:
         dest_keys = set(destination.keys())
@@ -338,14 +398,17 @@ def upload(source_root, destination, force=False, dry_run=False,
 
     options = []
     if force:
-        options.append('forced')
+        options.append('force')
     if dry_run:
-        options.append('dry-run')
-    logger.info('starting upload to %s%s: %d source files, %d destination keys',
-                destination,
-                ' (' + ', '.join(options) + ')' if options else '',
+        options.append('dry_run')
+    if continue_on_errors:
+        options.append('continue_on_errors')
+    logger.info('starting upload from %s (%d files) to %s (%d existing keys)%s',
+                source,
                 len(source_key_map),
-                len(dest_keys))
+                destination,
+                len(dest_keys),
+                ', options: ' + ', '.join(options) if options else '')
 
     num_scanned = 0
     num_uploaded = 0
@@ -363,9 +426,8 @@ def upload(source_root, destination, force=False, dry_run=False,
             verb = 'would upload' if dry_run else 'uploading'
         logger.warning('%s %s to %s', verb, rel_path, key)
         if not dry_run:
-            source_path = os.path.join(source_root, rel_path)
             try:
-                destination.upload(key, source_path)
+                destination.upload(key, source, rel_path)
                 num_uploaded += 1
             except Exception as error:
                 if not continue_on_errors:
@@ -380,25 +442,25 @@ def upload(source_root, destination, force=False, dry_run=False,
     return (num_scanned, num_uploaded, num_errors)
 
 
-def delete(source_root, destination, dry_run=False,
-           hash_length=DEFAULT_HASH_LENGTH, continue_on_errors=True,
-           dot_names=False, include=None, exclude=None):
+def delete(source, destination, dry_run=False, continue_on_errors=True):
     """Delete files from destination (an instance of a Destination subclass)
-    that are no longer present in source_root tree. Return tuple of
+    that are no longer present in source tree. Return tuple of
     (num_files_scanned, num_deleted, num_errors).
+
+    If "source" is a string, FileSource(source) is used as the source
+    instance. Otherwise "source" must be a FileSource instance.
 
     If continue_on_errors is True, it will continue deleting other files even
     if some deletes fail (the default is to raise DestinationError on first
     error).
 
     If dry_run is True, log what would be deleted instead of actually
-    deleting. The dot_names, include, and exclude parameters are handled as
-    per the walk_files() function.
+    deleting.
     """
-    source_key_map = build_key_map(
-        source_root, hash_length=hash_length,
-        dot_names=dot_names, include=include, exclude=exclude,
-    )
+    if isinstance(source, (str, bytes)):
+        source = FileSource(source)
+
+    source_key_map = source.build_key_map()
     source_keys = set(source_key_map.values())
 
     try:
@@ -408,12 +470,15 @@ def delete(source_root, destination, dry_run=False,
 
     options = []
     if dry_run:
-        options.append('dry-run')
-    logger.info('starting delete from %s%s: %d source files, %d destination keys',
+        options.append('dry_run')
+    if continue_on_errors:
+        options.append('continue_on_errors')
+    logger.info('starting delete from %s (%d files) to %s (%d existing keys)%s',
+                source,
+                len(source_key_map),
                 destination,
-                ' (' + ', '.join(options) + ')' if options else '',
-                len(source_keys),
-                len(dest_keys))
+                len(dest_keys),
+                ', options: ' + ', '.join(options) if options else '')
 
     num_scanned = 0
     num_deleted = 0
@@ -453,10 +518,10 @@ def main(args=None):
         args = sys.argv[1:]
 
     description = """
+cdnupload {version} -- (c) Ben Hoyt 2017 -- https://cdnupload.com/
+
 Upload static files from given source directory to destination directory or
 S3 bucket, with content-based hash in filenames for versioning.
-
-cdnupload {version} -- Ben Hoyt (c) 2017 -- https://cdnupload.com/
 """.format(version=__version__)
 
     parser = argparse.ArgumentParser(description=description,
@@ -502,21 +567,6 @@ cdnupload {version} -- Ben Hoyt (c) 2017 -- https://cdnupload.com/
     logging.basicConfig(level=logging.WARNING, format='%(message)s')
     logger.setLevel(log_levels[args.log_level])
 
-    dest_kwargs = {}
-    for arg in args.dest_args:
-        name, sep, value = arg.partition('=')
-        if not sep:
-            value = True
-        name = name.replace('-', '_')
-        existing = dest_kwargs.get(name)
-        if existing is not None:
-            if isinstance(existing, list):
-                existing.append(value)
-            else:
-                dest_kwargs[name] = [existing, value]
-        else:
-            dest_kwargs[name] = value
-
     match = re.match(r'(\w+):', args.destination)
     if match:
         scheme = match.group(1)
@@ -553,28 +603,51 @@ cdnupload {version} -- Ben Hoyt (c) 2017 -- https://cdnupload.com/
         print(inspect.getdoc(destination_class))
         sys.exit(0)
 
+    source = FileSource(
+        args.source,
+        dot_names=args.dot_names,
+        include=args.include,
+        exclude=args.exclude,
+        hash_length=args.hash_length,
+    )
+
+    dest_kwargs = {}
+    for arg in args.dest_args:
+        name, sep, value = arg.partition('=')
+        if not sep:
+            value = True
+        name = name.replace('-', '_')
+        existing = dest_kwargs.get(name)
+        if existing is not None:
+            if isinstance(existing, list):
+                existing.append(value)
+            else:
+                dest_kwargs[name] = [existing, value]
+        else:
+            dest_kwargs[name] = value
+
     try:
         destination = destination_class(args.destination, **dest_kwargs)
     except Exception as error:
         logger.error('ERROR creating %s instance: %s', destination_class.__name__, error)
         sys.exit(1)
 
-    action_kwargs = dict(
-        source_root=args.source,
-        destination=destination,
-        dry_run=args.dry_run,
-        hash_length=args.hash_length,
-        continue_on_errors=args.continue_on_errors,
-        dot_names=args.dot_names,
-        include=args.include,
-        exclude=args.exclude,
-    )
     try:
         if args.action == 'upload':
-            action_kwargs['force'] = args.force
-            _, _, num_errors = upload(**action_kwargs)
+            _, _, num_errors = upload(
+                source,
+                destination,
+                force=args.force,
+                dry_run=args.dry_run,
+                continue_on_errors=args.continue_on_errors,
+            )
         elif args.action == 'delete':
-            _, _, num_errors = delete(**action_kwargs)
+            _, _, num_errors = delete(
+                source,
+                destination,
+                dry_run=args.dry_run,
+                continue_on_errors=args.continue_on_errors,
+            )
         else:
             assert 'unexpected action {!r}'.format(args.action)
     except DestinationError as error:
