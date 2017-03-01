@@ -394,7 +394,8 @@ def upload(source, destination, force=False, dry_run=False,
     try:
         dest_keys = set(destination.keys())
     except Exception as error:
-        raise DestinationError('ERROR listing keys at {}'.format(destination), error)
+        raise DestinationError('ERROR listing keys at {}'.format(destination),
+                               error)
 
     options = []
     if force:
@@ -431,7 +432,8 @@ def upload(source, destination, force=False, dry_run=False,
                 num_uploaded += 1
             except Exception as error:
                 if not continue_on_errors:
-                    raise DestinationError('ERROR uploading to {}'.format(key), error, key=key)
+                    raise DestinationError('ERROR uploading to {}'.format(key),
+                                           error, key=key)
                 logger.error('ERROR uploading to %s: %s', key, error)
                 num_errors += 1
         else:
@@ -466,7 +468,8 @@ def delete(source, destination, dry_run=False, continue_on_errors=True):
     try:
         dest_keys = sorted(destination.keys())
     except Exception as error:
-        raise DestinationError('ERROR listing keys at {}'.format(destination), error)
+        raise DestinationError('ERROR listing keys at {}'.format(destination),
+                               error)
 
     options = []
     if dry_run:
@@ -524,37 +527,46 @@ Upload static files from given source directory to destination directory or
 S3 bucket, with content-based hash in filenames for versioning.
 """.format(version=__version__)
 
-    parser = argparse.ArgumentParser(description=description,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=description,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument('source',
                         help='source directory')
     parser.add_argument('destination',
                         help='destination directory (or s3://bucket/path)')
     parser.add_argument('dest_args', nargs='*', default=[],
-                        help='optional Destination() keyword args, for example access-key=XYZ')
-    parser.add_argument('-a', '--action', choices=['upload', 'delete', 'dest-help'], default='upload',
+                        help='optional Destination() keyword args, for example '
+                             'access-key=XYZ')
+    parser.add_argument('-a', '--action', default='upload',
+                        choices=['upload', 'delete', 'dest-help'],
                         help='action to perform (upload, delete, or show help '
                              'for given Destination class), default %(default)s')
     parser.add_argument('-c', '--continue-on-errors', action='store_true',
-                        help='continue after upload or delete errors (default is to stop on first error)')
+                        help='continue after upload or delete errors (default '
+                             'is to stop on first error)')
     parser.add_argument('-d', '--dry-run', action='store_true',
-                        help='show what we would upload or delete instead of actually doing it')
+                        help='show what we would upload or delete instead of '
+                             'actually doing it')
     parser.add_argument('-f', '--force', action='store_true',
                         help='force upload even if destination file already exists')
     parser.add_argument('-i', '--include', action='append',
-                        help='only include source file if its relative path matches, '
-                             'for example *.png or images/* (may be specified multiple times)')
+                        help='only include source file if its relative path '
+                             'matches, for example *.png or images/* (may be '
+                             'specified multiple times)')
     parser.add_argument('-l', '--log-level', default='default',
                         choices=['verbose', 'default', 'quiet', 'errors', 'off'],
                         help='set logging level')
     parser.add_argument('-s', '--hash-length', type=int, default=DEFAULT_HASH_LENGTH,
                         help='number of chars of hash to use (default %(default)d)')
     parser.add_argument('-t', '--dot-names', action='store_true',
-                        help='include source files and directories starting with "." (exclude by default)')
+                        help='include source files and directories starting '
+                             'with "." (exclude by default)')
     parser.add_argument('-v', '--version', action='version', version=__version__)
     parser.add_argument('-x', '--exclude', action='append',
-                        help='exclude source file if its relative path matches, '
-                             'for example *.txt or __pycache__/* (may be specified multiple times)')
+                        help='exclude source file if its relative path '
+                             'matches, for example *.txt or __pycache__/* '
+                             '(may be specified multiple times)')
     args = parser.parse_args()
 
     log_levels = {
@@ -580,7 +592,8 @@ S3 bucket, with content-based hash in filenames for versioning.
                 parser.error("can't import handler for scheme {!r}: {}".format(
                         scheme, error))
             if not hasattr(module, 'Destination'):
-                parser.error('{} module has no Destination class'.format(module_name))
+                parser.error('{} module has no Destination class'.format(
+                        module_name))
             destination_class = getattr(module, 'Destination')
     else:
         destination_class = FileDestination
@@ -629,7 +642,8 @@ S3 bucket, with content-based hash in filenames for versioning.
     try:
         destination = destination_class(args.destination, **dest_kwargs)
     except Exception as error:
-        logger.error('ERROR creating %s instance: %s', destination_class.__name__, error)
+        logger.error('ERROR creating %s instance: %s',
+                     destination_class.__name__, error)
         sys.exit(1)
 
     try:
