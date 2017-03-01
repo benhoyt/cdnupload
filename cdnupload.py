@@ -329,13 +329,14 @@ class S3Destination(Destination):
             raise Exception('boto3 must be installed to upload to S3, try: '
                             'pip install boto3')
 
-        self.s3_client = boto3.client(
-            's3',
+        client_kwargs = dict(
             region_name=region_name,
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
-            **(client_args or {}),
         )
+        if client_args:
+            client_kwargs.update(client_args)
+        self.s3_client = boto3.client('s3', **client_kwargs)
 
     def __str__(self):
         return 's3://{}/{}'.format(self.bucket_name, self.key_prefix)
@@ -565,11 +566,11 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
                         help='continue after upload or delete errors (default '
                              'is to stop on first error)')
     parser.add_argument('-d', '--dry-run', action='store_true',
-                        help='show what we would upload or delete instead of '
+                        help='show what script would upload or delete instead of '
                              'actually doing it')
     parser.add_argument('-f', '--force', action='store_true',
                         help='force upload even if destination file already exists, '
-                             'or force delete if even we would delete all keys at '
+                             'or force delete even if it would delete all keys at '
                              'destination')
     parser.add_argument('-i', '--include', action='append',
                         help='only include source file if its relative path '
