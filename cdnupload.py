@@ -543,7 +543,7 @@ def main(args=None):
 cdnupload {version} -- (c) Ben Hoyt 2017 -- https://cdnupload.com/
 
 Upload static files from given source directory to destination directory or
-S3 bucket, with content-based hash in filenames for versioning.
+Amazon S3 bucket, with content-based hash in filenames for versioning.
 """.format(version=__version__)
 
     parser = argparse.ArgumentParser(
