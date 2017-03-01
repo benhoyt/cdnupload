@@ -333,20 +333,17 @@ class S3Destination(Destination):
         return 's3://{}/{}'.format(self.bucket_name, self.key_prefix)
 
     def keys(self):
-        # TODO: check error handling, test with multiple pages
         paginator = self.s3_client.get_paginator('list_objects_v2')
         pages = paginator.paginate(
             Bucket=self.bucket_name,
-            Delimiter='/',
             Prefix=self.key_prefix,
             PaginationConfig={'PageSize': 1000},
         )
         for response in pages:
-            for obj in response['Contents']:
+            for obj in response.get('Contents', []):
                 yield obj['Key']
 
     def upload(self, key, source, rel_path):
-        # TODO: check error handling
         content_type = mimetypes.guess_type(rel_path)[0]
         key = self.key_prefix + key
 
@@ -359,7 +356,7 @@ class S3Destination(Destination):
                                           ExtraArgs=extra_args)
 
     def delete(self, key):
-        # TODO: check error handling
+        # TODO: check error handling: that it was actually deleted
         key = self.key_prefix + key
         self.s3_client.delete_object(Bucket=self.bucket_name, Key=key)
 
