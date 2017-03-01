@@ -39,6 +39,32 @@ DEFAULT_HASH_LENGTH = 16
 logger = logging.getLogger('cdnupload')
 
 
+class Error(Exception):
+    """Base class that all exceptions raised in this module inherit from."""
+
+
+class DeleteAllKeysError(Error):
+    """Raised when delete() would delete all keys in destination."""
+
+
+class DestinationError(Error):
+    """Raised when an error occurs accessing the destination (usually
+    uploading or deleting), so that callers can catch a more specific error
+    than just Exception. Where relevant, includes the destination key in
+    question.
+    """
+
+    def __init__(self, message, error, key=None):
+        self.message = message
+        self.error = error
+        self.key = key
+
+    def __str__(self):
+        return '{}: {}'.format(self.message, self.error)
+
+    __repr__ = __str__
+
+
 class FileSource(object):
     """Upload source that recursively returns files from directory tree
     starting at given root path. See __init__'s docstring for details.
@@ -179,24 +205,6 @@ class FileSource(object):
             key = self.make_key(rel_path, file_hash)
             keys_by_path[rel_path] = key
         return keys_by_path
-
-
-class DestinationError(Exception):
-    """Raised when an error occurs accessing the destination (usually
-    uploading or deleting), so that callers can catch a more specific error
-    than just Exception. Where relevant, includes the destination key in
-    question.
-    """
-
-    def __init__(self, message, exception, key=None):
-        self.message = message
-        self.exception = exception
-        self.key = key
-
-    def __str__(self):
-        return '{}: {}'.format(self.message, self.exception)
-
-    __repr__ = __str__
 
 
 class Destination(object):
@@ -356,7 +364,6 @@ class S3Destination(Destination):
                                           ExtraArgs=extra_args)
 
     def delete(self, key):
-        # TODO: check error handling: that it was actually deleted
         key = self.key_prefix + key
         self.s3_client.delete_object(Bucket=self.bucket_name, Key=key)
 
@@ -376,12 +383,12 @@ def upload(source, destination, force=False, dry_run=False,
     'images/logo.png' will become something like
     'images/logo_deadbeef12345678.png'.
 
+    If force is True, upload even if files are there already. If dry_run is
+    True, log what would be uploaded instead of actually uploading.
+
     If continue_on_errors is True, it will continue uploading other files even
     if some uploads fail (the default is to raise DestinationError on first
     error).
-
-    If force is True, upload even if files are there already. If dry_run is
-    True, log what would be uploaded instead of actually uploading.
     """
     if isinstance(source, (str, bytes)):
         source = FileSource(source)
@@ -441,7 +448,8 @@ def upload(source, destination, force=False, dry_run=False,
     return (num_scanned, num_uploaded, num_errors)
 
 
-def delete(source, destination, dry_run=False, continue_on_errors=True):
+def delete(source, destination, force=False, dry_run=False,
+           continue_on_errors=False):
     """Delete files from destination (an instance of a Destination subclass)
     that are no longer present in source tree. Return tuple of
     (num_files_scanned, num_deleted, num_errors).
@@ -449,12 +457,17 @@ def delete(source, destination, dry_run=False, continue_on_errors=True):
     If "source" is a string, FileSource(source) is used as the source
     instance. Otherwise "source" must be a FileSource instance.
 
-    If continue_on_errors is True, it will continue deleting other files even
-    if some deletes fail (the default is to raise DestinationError on first
-    error).
+    This function does a sanity check to ensure you're not deleting ALL keys
+    at the destination by accident (for example, specifying an empty directory
+    for the source tree). If it would delete all destination keys, it raises
+    DeleteAllKeysError. To override and delete all anyway, specify force=True.
 
     If dry_run is True, log what would be deleted instead of actually
     deleting.
+
+    If continue_on_errors is True, it will continue deleting other files even
+    if some deletes fail (the default is to raise DestinationError on first
+    error).
     """
     if isinstance(source, (str, bytes)):
         source = FileSource(source)
@@ -480,6 +493,14 @@ def delete(source, destination, dry_run=False, continue_on_errors=True):
                 len(dest_keys),
                 ', options: ' + ', '.join(options) if options else '')
 
+    if not force:
+        num_to_delete = sum(1 for k in dest_keys if k not in source_keys)
+        if num_to_delete >= len(dest_keys):
+            raise DeleteAllKeysError(
+                    "ERROR - would delete all {} destination keys, "
+                    "you probably didn't intend this! (use -f/--force or "
+                    "force=True to override)".format(len(dest_keys)))
+
     num_scanned = 0
     num_deleted = 0
     num_errors = 0
@@ -498,7 +519,8 @@ def delete(source, destination, dry_run=False, continue_on_errors=True):
                 num_deleted += 1
             except Exception as error:
                 if not continue_on_errors:
-                    raise DestinationError('ERROR deleting {}'.format(key), error, key=key)
+                    raise DestinationError('ERROR deleting {}'.format(key),
+                                           error, key=key)
                 logger.error('ERROR deleting %s: %s', key, error)
                 num_errors += 1
         else:
@@ -546,7 +568,9 @@ S3 bucket, with content-based hash in filenames for versioning.
                         help='show what we would upload or delete instead of '
                              'actually doing it')
     parser.add_argument('-f', '--force', action='store_true',
-                        help='force upload even if destination file already exists')
+                        help='force upload even if destination file already exists, '
+                             'or force delete if even we would delete all keys at '
+                             'destination')
     parser.add_argument('-i', '--include', action='append',
                         help='only include source file if its relative path '
                              'matches, for example *.png or images/* (may be '
@@ -643,25 +667,21 @@ S3 bucket, with content-based hash in filenames for versioning.
                      destination_class.__name__, error)
         sys.exit(1)
 
+    action_args = dict(
+        source=source,
+        destination=destination,
+        force=args.force,
+        dry_run=args.dry_run,
+        continue_on_errors=args.continue_on_errors,
+    )
     try:
         if args.action == 'upload':
-            _, _, num_errors = upload(
-                source,
-                destination,
-                force=args.force,
-                dry_run=args.dry_run,
-                continue_on_errors=args.continue_on_errors,
-            )
+            _, _, num_errors = upload(**action_args)
         elif args.action == 'delete':
-            _, _, num_errors = delete(
-                source,
-                destination,
-                dry_run=args.dry_run,
-                continue_on_errors=args.continue_on_errors,
-            )
+            _, _, num_errors = delete(**action_args)
         else:
             assert 'unexpected action {!r}'.format(args.action)
-    except DestinationError as error:
+    except Error as error:
         logger.error('%s', error)
         num_errors = 1
 
