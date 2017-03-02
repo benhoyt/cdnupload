@@ -87,7 +87,7 @@ class FileSource(object):
     def __init__(self, root, dot_names=False, include=None, exclude=None,
                  ignore_walk_errors=False, follow_symlinks=False,
                  hash_length=DEFAULT_HASH_LENGTH, hash_chunk_size=64*1024,
-                 hash_class=hashlib.sha1):
+                 hash_class=hashlib.sha1, _os_walk=os.walk):
         """Initialize instance for sourcing file from given root directory.
 
         Include directories and files starting with '.' if "dot_names" is True
@@ -120,11 +120,12 @@ class FileSource(object):
 
         self.ignore_walk_errors = ignore_walk_errors
         self.follow_symlinks = follow_symlinks
-        self.os_walk = os.walk  # for easier testing
 
         self.hash_length = hash_length
         self.hash_chunk_size = hash_chunk_size
         self.hash_class = hash_class
+
+        self.os_walk = _os_walk  # for easier testing
 
     def __str__(self):
         """Return a human-readable string describing this source."""
@@ -326,7 +327,7 @@ class S3Destination(Destination):
     def __init__(self, s3_url, access_key=None, secret_key=None,
                  max_age=365*24*60*60, cache_control='public, max-age={max_age}',
                  acl='public-read', region_name=None, client_args=None,
-                 upload_args=None):
+                 upload_args=None, _boto3=None):
 
         parsed = urlparse(s3_url)
         if parsed.scheme != 's3':
@@ -353,11 +354,14 @@ class S3Destination(Destination):
             self.upload_args['CacheControl'] = cache_control
 
         # Import boto3 at runtime so it's not required to use cdnupload.py
-        try:
-            import boto3
-        except ImportError:
-            raise Exception('boto3 must be installed to upload to S3, try: '
-                            'pip install boto3')
+        if _boto3 is None:
+            try:
+                import boto3
+            except ImportError:
+                raise Exception('boto3 must be installed to upload to S3, try: '
+                                'pip install boto3')
+        else:
+            boto3 = _boto3
 
         client_kwargs = dict(
             region_name=region_name,
