@@ -2,16 +2,16 @@
 
 Run "python cdnupload.py -h" for command line help. See README.rst for
 documentation, and LICENSE.txt for license information. Visit the project's
-website or GitHub repo for more information:
+website for more information:
 
 https://cdnupload.com/
-https://github.com/benhoyt/cdnupload
+
 
 TODO:
-* FileSource error handling
 * tests
   - test handling of unicode filenames (round trip)
 * python2 support
+* cdnupload.com website, dual licensing, etc
 * README, LICENSE, etc
 """
 
@@ -43,14 +43,26 @@ class Error(Exception):
     """Base class that all exceptions raised in this module inherit from."""
 
 
+class SourceError(Error):
+    """Raised when an error occurs accessing the source (usually when building
+    the key map).
+    """
+
+    def __init__(self, message, error):
+        self.message = message
+        self.error = error
+
+    def __str__(self):
+        return '{}: {}'.format(self.message, self.error)
+
+
 class DeleteAllKeysError(Error):
     """Raised when delete() would delete all keys in destination."""
 
 
 class DestinationError(Error):
     """Raised when an error occurs accessing the destination (usually
-    uploading or deleting), so that callers can catch a more specific error
-    than just Exception. Where relevant, includes the destination key in
+    uploading or deleting). Where relevant, includes the destination key in
     question.
     """
 
@@ -61,8 +73,6 @@ class DestinationError(Error):
 
     def __str__(self):
         return '{}: {}'.format(self.message, self.error)
-
-    __repr__ = __str__
 
 
 class FileSource(object):
@@ -75,6 +85,7 @@ class FileSource(object):
     IS_TEXT_BYTES = 8000
 
     def __init__(self, root, dot_names=False, include=None, exclude=None,
+                 ignore_walk_errors=False, follow_symlinks=False,
                  hash_length=DEFAULT_HASH_LENGTH, hash_chunk_size=64*1024,
                  hash_class=hashlib.sha1):
         """Initialize instance for sourcing file from given root directory.
@@ -85,6 +96,11 @@ class FileSource(object):
         includes if tuple or list is given. If "exclude" is specified, exclude
         any relative paths that match "exclude", or one of the excludes if
         tuple or list is given.
+
+        If ignore_walk_errors is True, ignore listdir errors when walking the
+        source tree (except for the root directory, which is always considered
+        an error). If follow_symlinks is True, follow symbolic links in the
+        source tree (default is not to follow links).
 
         When building a key mapping, "hash_length" characters of the hex
         content hash are included in the filename. The file is read in
@@ -101,6 +117,10 @@ class FileSource(object):
         if exclude and not isinstance(exclude, (tuple, list)):
             exclude = [exclude]
         self.exclude = exclude
+
+        self.ignore_walk_errors = ignore_walk_errors
+        self.follow_symlinks = follow_symlinks
+        self.os_walk = os.walk  # for easier testing
 
         self.hash_length = hash_length
         self.hash_chunk_size = hash_chunk_size
@@ -170,7 +190,17 @@ class FileSource(object):
         else:
             walk_root = self.root
 
-        for root, dirs, files in os.walk(walk_root):
+        # Ensure that errors while walking are raised as hard errors, unless
+        # ignore_walk_errors is True or it's an error listing the root dir
+        def onerror(error):
+            if not self.ignore_walk_errors or error.filename == walk_root:
+                raise error
+            else:
+                logger.debug('ignoring error scanning source tree: %s', error)
+
+        walker = self.os_walk(walk_root, onerror=onerror,
+                              followlinks=self.follow_symlinks)
+        for root, dirs, files in walker:
             if not self.dot_names:
                 dirs[:] = [d for d in dirs if not d.startswith('.')]
 
@@ -394,7 +424,10 @@ def upload(source, destination, force=False, dry_run=False,
     if isinstance(source, (str, bytes)):
         source = FileSource(source)
 
-    source_key_map = source.build_key_map()
+    try:
+        source_key_map = source.build_key_map()
+    except Exception as error:
+        raise SourceError('ERROR scanning source tree', error)
 
     try:
         dest_keys = set(destination.keys())
@@ -473,7 +506,10 @@ def delete(source, destination, force=False, dry_run=False,
     if isinstance(source, (str, bytes)):
         source = FileSource(source)
 
-    source_key_map = source.build_key_map()
+    try:
+        source_key_map = source.build_key_map()
+    except Exception as error:
+        raise SourceError('ERROR scanning source tree', error)
     source_keys = set(source_key_map.values())
 
     try:
@@ -551,6 +587,7 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
         description=description,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
+
     parser.add_argument('source',
                         help='source directory')
     parser.add_argument('destination',
@@ -558,16 +595,18 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
     parser.add_argument('dest_args', nargs='*', default=[],
                         help='optional Destination() keyword args, for example '
                              'access-key=XYZ')
+
     parser.add_argument('-a', '--action', default='upload',
                         choices=['upload', 'delete', 'dest-help'],
                         help='action to perform (upload, delete, or show help '
                              'for given Destination class), default %(default)s')
-    parser.add_argument('-c', '--continue-on-errors', action='store_true',
-                        help='continue after upload or delete errors (default '
-                             'is to stop on first error)')
     parser.add_argument('-d', '--dry-run', action='store_true',
                         help='show what script would upload or delete instead of '
                              'actually doing it')
+    parser.add_argument('-e', '--exclude', action='append',
+                        help='exclude source file if its relative path '
+                             'matches, for example *.txt or __pycache__/* '
+                             '(may be specified multiple times)')
     parser.add_argument('-f', '--force', action='store_true',
                         help='force upload even if destination file already exists, '
                              'or force delete even if it would delete all keys at '
@@ -579,16 +618,23 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
     parser.add_argument('-l', '--log-level', default='default',
                         choices=['verbose', 'default', 'quiet', 'errors', 'off'],
                         help='set logging level')
-    parser.add_argument('-s', '--hash-length', type=int, default=DEFAULT_HASH_LENGTH,
-                        help='number of chars of hash to use (default %(default)d)')
-    parser.add_argument('-t', '--dot-names', action='store_true',
-                        help='include source files and directories starting '
-                             'with "." (exclude by default)')
     parser.add_argument('-v', '--version', action='version', version=__version__)
-    parser.add_argument('-x', '--exclude', action='append',
-                        help='exclude source file if its relative path '
-                             'matches, for example *.txt or __pycache__/* '
-                             '(may be specified multiple times)')
+
+    less_common = parser.add_argument_group('less commonly-used arguments')
+    less_common.add_argument('--continue-on-errors', action='store_true',
+                             help='continue after upload or delete errors')
+    less_common.add_argument('--dot-names', action='store_true',
+                             help="include source files and directories starting "
+                                  "with '.'")
+    less_common.add_argument('--follow-symlinks', action='store_true',
+                             help='follow symbolic links when walking source tree')
+    less_common.add_argument('--hash-length', type=int, default=DEFAULT_HASH_LENGTH,
+                             help='number of hex chars of hash to use for '
+                                  'destination key (default %(default)d)')
+    less_common.add_argument('--ignore-walk-errors', action='store_true',
+                             help='ignore errors when walking source tree, '
+                                  'except for error on root directory')
+
     args = parser.parse_args()
 
     log_levels = {
@@ -643,6 +689,8 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
         dot_names=args.dot_names,
         include=args.include,
         exclude=args.exclude,
+        ignore_walk_errors=args.ignore_walk_errors,
+        follow_symlinks=args.follow_symlinks,
         hash_length=args.hash_length,
     )
 
