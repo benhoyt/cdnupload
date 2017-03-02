@@ -603,7 +603,7 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
     parser.add_argument('-d', '--dry-run', action='store_true',
                         help='show what script would upload or delete instead of '
                              'actually doing it')
-    parser.add_argument('-e', '--exclude', action='append',
+    parser.add_argument('-e', '--exclude', action='append', metavar='PATTERN',
                         help='exclude source file if its relative path '
                              'matches, for example *.txt or __pycache__/* '
                              '(may be specified multiple times)')
@@ -611,7 +611,7 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
                         help='force upload even if destination file already exists, '
                              'or force delete even if it would delete all keys at '
                              'destination')
-    parser.add_argument('-i', '--include', action='append',
+    parser.add_argument('-i', '--include', action='append', metavar='PATTERN',
                         help='only include source file if its relative path '
                              'matches, for example *.png or images/* (may be '
                              'specified multiple times)')
@@ -628,7 +628,8 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
                                   "with '.'")
     less_common.add_argument('--follow-symlinks', action='store_true',
                              help='follow symbolic links when walking source tree')
-    less_common.add_argument('--hash-length', type=int, default=DEFAULT_HASH_LENGTH,
+    less_common.add_argument('--hash-length', default=DEFAULT_HASH_LENGTH,
+                             type=int, metavar='N',
                              help='number of hex chars of hash to use for '
                                   'destination key (default %(default)d)')
     less_common.add_argument('--ignore-walk-errors', action='store_true',
