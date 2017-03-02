@@ -1,5 +1,6 @@
 __pycache__/
 *.pyc
+.eggs
 .cache
 cdnupload.egg-info/
 output/
