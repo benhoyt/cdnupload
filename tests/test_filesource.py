@@ -74,6 +74,9 @@ def test_make_key():
     assert s.make_key('script.js', 'deadbeef0123456789') == 'script_deadbee.js'
     assert s.make_key('foo', 'abcdef012345') == 'foo_abcdef0'
 
+    s = FileSource('static', hash_length=100)
+    assert s.make_key('script.js', 'deadbeef0123456789') == 'script_deadbeef0123456789.js'
+
 
 def test_walk_files():
     pass
