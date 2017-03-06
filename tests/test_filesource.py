@@ -82,6 +82,50 @@ def test_walk_files():
     pass
 
 
-def test_build_key_map():
+def test_walk_files_error(tmpdir):
+    def check_walk_error(file_source, error_path):
+        try:
+            list(file_source.walk_files())
+            assert False  # shouldn't get here
+        except OSError as error:
+            assert error.filename == error_path
+
+    not_exists = tmpdir.join('not_exists')
+    s = FileSource(not_exists.strpath)
+    check_walk_error(s, not_exists.strpath)
+
+    # Should raise an error on root path even if ignore_walk_errors is True
+    s = FileSource(not_exists.strpath, ignore_walk_errors=True)
+    check_walk_error(s, not_exists.strpath)
+
+    def mock_os_walk(top, onerror=None, followlinks=False):
+        yield (os.path.join(top, '.'), ['bad_dir', 'good_dir'], ['script.js'])
+        if onerror:
+            error = OSError()
+            error.filename = 'bad_dir'
+            onerror(error)
+        yield (os.path.join(top, 'good_dir'), [], ['test.txt'])
+
+    s = FileSource(tmpdir.strpath, _os_walk=mock_os_walk)
+    check_walk_error(s, 'bad_dir')
+
+    s = FileSource(tmpdir.strpath, ignore_walk_errors=True, _os_walk=mock_os_walk)
+    assert list(s.walk_files()) == ['script.js', 'good_dir/test.txt']
+
+
+def test_walk_files_unicode():
     pass
 
+
+def test_build_key_map(tmpdir):
+    tmpdir.join('script.js').write_binary(b'/* test */')
+    tmpdir.join('images').mkdir()
+    tmpdir.join('images').join('foo1.jpg').write_binary(b'foo1')
+    tmpdir.join('images').join('foo2.jpg').write_binary(b'foo2')
+
+    s = FileSource(tmpdir.strpath)
+    keys = s.build_key_map()
+    assert sorted(keys) == ['images/foo1.jpg', 'images/foo2.jpg', 'script.js']
+    assert keys['script.js'] == 'script_49016b58bbcc6182.js'
+    assert keys['images/foo1.jpg'] == 'images/foo1_18a16d4530763ef4.jpg'
+    assert keys['images/foo2.jpg'] == 'images/foo2_aaadd94977b8fbf3.jpg'
