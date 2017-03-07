@@ -1,4 +1,4 @@
-"""Test FileSource methods."""
+"""Test FileSource class."""
 
 import os
 import hashlib
@@ -192,9 +192,14 @@ def test_walk_files_follow_symlinks(tmpdir):
     tmpdir.join('walkdir').mkdir()
     tmpdir.join('walkdir', 'file').write_binary(b'bar')
 
+
     try:
-        os.symlink(tmpdir.join('target').strpath, tmpdir.join('walkdir', 'link').strpath,
-                   target_is_directory=True)
+        try:
+            os.symlink(tmpdir.join('target').strpath, tmpdir.join('walkdir', 'link').strpath,
+                       target_is_directory=True)
+        except TypeError:
+            # Python 2.x doesn't support the target_is_directory parameter
+            os.symlink(tmpdir.join('target').strpath, tmpdir.join('walkdir', 'link').strpath)
     except NotImplementedError:
         pytest.skip('symlinks only supported on Windows Vista or later')
 
@@ -237,11 +242,16 @@ def test_walk_files_errors(tmpdir):
 
 
 def test_walk_files_unicode(tmpdir):
-    tmpdir.join('foo\u2012.txt').write_binary(b'unifoo')
+    tmpdir.join(u'foo\u2012.txt').write_binary(b'unifoo')
     s = FileSource(tmpdir.strpath)
-    assert sorted(s.walk_files()) == ['foo\u2012.txt']
-    s = FileSource(bytes(tmpdir.strpath, sys.getfilesystemencoding()))
-    assert sorted(s.walk_files()) == ['foo\u2012.txt']
+    assert sorted(s.walk_files()) == [u'foo\u2012.txt']
+
+    if not isinstance(tmpdir.strpath, bytes):
+        bytes_path = bytes(tmpdir.strpath, sys.getfilesystemencoding())
+    else:
+        bytes_path = tmpdir.strpath
+    s = FileSource(bytes_path)
+    assert sorted(s.walk_files()) == [u'foo\u2012.txt']
 
 
 def test_build_key_map(tmpdir):

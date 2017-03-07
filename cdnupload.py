@@ -10,7 +10,23 @@ https://cdnupload.com/
 TODO:
 * tests
   - test handling of unicode filenames (round trip)
+
 * support for parallel s3 uploads (multiprocessing.dummy thread pool?)
+    START:
+    if num_threads > 1:
+        thread_pool = multiprocessing.dummy.Pool(num_threads)
+
+    UPLOAD:
+    if num_threads > 1:
+        thread_pool.apply_async(destination.upload, (key, source, rel_path))
+    else:
+        destination.upload(key, source, rel_path)
+
+    END:
+    if num_threads > 1:
+        logger.info('waiting for parallel uploads to finish')
+        thread_pool.join() # or whatever
+
 * python2 support
 * cdnupload.com website, dual licensing, etc
 * README, LICENSE, etc
