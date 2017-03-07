@@ -173,3 +173,7 @@ def test_build_key_map(tmpdir):
     assert keys['script.js'] == 'script_49016b58bbcc6182.js'
     assert keys['images/foo1.jpg'] == 'images/foo1_18a16d4530763ef4.jpg'
     assert keys['images/foo2.jpg'] == 'images/foo2_aaadd94977b8fbf3.jpg'
+
+
+def test_build_key_map_caching(tmpdir):
+    pass # TODO

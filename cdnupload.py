@@ -20,6 +20,7 @@ from __future__ import print_function
 import argparse
 import fnmatch
 import hashlib
+import json
 import logging
 import mimetypes
 import os
@@ -87,7 +88,7 @@ class FileSource(object):
     def __init__(self, root, dot_names=False, include=None, exclude=None,
                  ignore_walk_errors=False, follow_symlinks=False,
                  hash_length=DEFAULT_HASH_LENGTH, hash_chunk_size=64*1024,
-                 hash_class=hashlib.sha1, _os_walk=os.walk):
+                 hash_class=hashlib.sha1, cache_key_map=True, _os_walk=os.walk):
         """Initialize instance for sourcing file from given root directory.
 
         Include directories and files starting with '.' if "dot_names" is True
@@ -107,6 +108,10 @@ class FileSource(object):
         "hash_chunk_size" blocks when being hashed. "hash_class" is called
         to generate the file hashes (you could use hashlib.md5 or something
         else instead).
+
+        If cache_key_map is False, don't cache the result of build_key_map().
+        Default is to cache the result so it doesn't need to be rebuilt if
+        build_key_map() is called again.
         """
         self.root = root
         self.dot_names = dot_names
@@ -124,6 +129,9 @@ class FileSource(object):
         self.hash_length = hash_length
         self.hash_chunk_size = hash_chunk_size
         self.hash_class = hash_class
+
+        self.cache_key_map = cache_key_map
+        self._key_map = None
 
         self.os_walk = _os_walk  # for easier testing
 
@@ -230,11 +238,18 @@ class FileSource(object):
         mapping can always look up keys using 'dir/file.ext' style paths,
         regardless of operating system.
         """
+        if self.cache_key_map and self._key_map is not None:
+            return self._key_map
+
         keys_by_path = {}
         for rel_path in self.walk_files():
             file_hash = self.hash_file(rel_path)
             key = self.make_key(rel_path, file_hash)
             keys_by_path[rel_path] = key
+
+        if self.cache_key_map:
+            self._key_map = keys_by_path
+
         return keys_by_path
 
 
@@ -619,6 +634,9 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
                         help='only include source file if its relative path '
                              'matches, for example *.png or images/* (may be '
                              'specified multiple times)')
+    parser.add_argument('-k', '--key-map', metavar='FILENAME',
+                        help='write source key map to given file as JSON '
+                             '(but only after successful upload or delete)')
     parser.add_argument('-l', '--log-level', default='default',
                         choices=['verbose', 'default', 'quiet', 'errors', 'off'],
                         help='set logging level')
@@ -738,6 +756,15 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
     except Error as error:
         logger.error('%s', error)
         num_errors = 1
+
+    if num_errors == 0 and args.key_map:
+        try:
+            with open(args.key_map, 'w') as f:
+                json.dump(source.build_key_map(), f, sort_keys=True, indent=4)
+            logger.info('wrote key map file as JSON to {}'.format(args.key_map))
+        except Exception as error:
+            logger.error('ERROR writing key map file: {}'.format(error))
+            num_errors += 1
 
     sys.exit(1 if num_errors else 0)
 
