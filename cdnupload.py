@@ -183,10 +183,10 @@ class FileSource(object):
         use use '/' (forward slash) as a path separator, regardless of running
         platform.
         """
-        if sys.platform == 'win32' and isinstance(self.root, bytes):
-            # Because os.walk() doesn't handle Unicode chars in walked paths
-            # on Windows if a bytes path is specified (easy on Python 2.x with
-            # "str")
+        if isinstance(self.root, bytes):
+            # Mainly because os.walk() doesn't handle Unicode chars in walked
+            # paths on Windows if a bytes path is specified (easy on Python 2.x
+            # with "str")
             walk_root = self.root.decode(sys.getfilesystemencoding())
         else:
             walk_root = self.root

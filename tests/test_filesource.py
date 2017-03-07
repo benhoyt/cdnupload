@@ -2,6 +2,9 @@
 
 import os
 import hashlib
+import sys
+
+import pytest
 
 from cdnupload import FileSource
 
@@ -66,6 +69,22 @@ def test_hash_file(tmpdir):
     assert s.hash_file('test1.txt', is_text=True) == '76bb1822205fc52742565357a1027fec'
 
 
+def test_hash_file_chunk_size(tmpdir):
+    class MockHasher:
+        updates = []
+
+        def update(self, chunk):
+            self.updates.append(chunk)
+
+        def hexdigest(self):
+            return hashlib.sha1(b''.join(self.updates)).hexdigest()
+
+    tmpdir.join('big').write_binary(b'x' * 65537)
+    s = FileSource(tmpdir.strpath, hash_class=MockHasher)
+    assert s.hash_file('big', is_text=False) == '73e6b534aafc0df0abf8bed462d387cf503cd776'
+    assert MockHasher.updates == [b'x' * 65536, b'x']
+
+
 def test_make_key():
     s = FileSource('static')
     assert s.make_key('script.js', 'deadbeef0123456789') == 'script_deadbeef01234567.js'
@@ -78,11 +97,32 @@ def test_make_key():
     assert s.make_key('script.js', 'deadbeef0123456789') == 'script_deadbeef0123456789.js'
 
 
-def test_walk_files():
-    pass
+
+def test_walk_files(tmpdir):
+    pass  # TODO: dot_names, include, exclude
 
 
-def test_walk_files_error(tmpdir):
+@pytest.mark.skipif(not hasattr(os, 'symlink'), reason='no os.symlink()')
+def test_walk_files_follow_symlinks(tmpdir):
+    tmpdir.join('target').mkdir()
+    tmpdir.join('target', 'test.txt').write_binary(b'foo')
+    tmpdir.join('walkdir').mkdir()
+    tmpdir.join('walkdir', 'file').write_binary(b'bar')
+
+    try:
+        os.symlink(tmpdir.join('target').strpath, tmpdir.join('walkdir', 'link').strpath,
+                   target_is_directory=True)
+    except NotImplementedError:
+        pytest.skip('symlinks only supported on Windows Vista or later')
+
+    s = FileSource(tmpdir.join('walkdir').strpath)
+    assert list(s.walk_files()) == ['file']
+
+    s = FileSource(tmpdir.join('walkdir').strpath, follow_symlinks=True)
+    assert list(s.walk_files()) == ['file', 'link/test.txt']
+
+
+def test_walk_files_errors(tmpdir):
     def check_walk_error(file_source, error_path):
         try:
             list(file_source.walk_files())
@@ -113,15 +153,19 @@ def test_walk_files_error(tmpdir):
     assert list(s.walk_files()) == ['script.js', 'good_dir/test.txt']
 
 
-def test_walk_files_unicode():
-    pass
+def test_walk_files_unicode(tmpdir):
+    tmpdir.join('foo\u2012.txt').write_binary(b'unifoo')
+    s = FileSource(tmpdir.strpath)
+    assert list(s.walk_files()) == ['foo\u2012.txt']
+    s = FileSource(bytes(tmpdir.strpath, sys.getfilesystemencoding()))
+    assert list(s.walk_files()) == ['foo\u2012.txt']
 
 
 def test_build_key_map(tmpdir):
     tmpdir.join('script.js').write_binary(b'/* test */')
     tmpdir.join('images').mkdir()
-    tmpdir.join('images').join('foo1.jpg').write_binary(b'foo1')
-    tmpdir.join('images').join('foo2.jpg').write_binary(b'foo2')
+    tmpdir.join('images', 'foo1.jpg').write_binary(b'foo1')
+    tmpdir.join('images', 'foo2.jpg').write_binary(b'foo2')
 
     s = FileSource(tmpdir.strpath)
     keys = s.build_key_map()
