@@ -84,6 +84,12 @@ def test_hash_file_chunk_size(tmpdir):
     assert s.hash_file('big', is_text=False) == '73e6b534aafc0df0abf8bed462d387cf503cd776'
     assert MockHasher.updates == [b'x' * 65536, b'x']
 
+    MockHasher.updates = []
+    tmpdir.join('small').write_binary(b'x' * 1025)
+    s = FileSource(tmpdir.strpath, hash_chunk_size=1024, hash_class=MockHasher)
+    assert s.hash_file('small', is_text=False) == 'dc0849dc97d2e7d5f575b1abdc5fa96d4989165f'
+    assert MockHasher.updates == [b'x' * 1024, b'x']
+
 
 def test_make_key():
     s = FileSource('static')
@@ -122,7 +128,61 @@ def test_walk_files_dot_names(tmpdir):
 
 
 def test_walk_files_include_exclude(tmpdir):
-    pass # TODO
+    tmpdir.join('file.txt').write_binary(b'text')
+    tmpdir.join('image1.jpg').write_binary(b'image1')
+    tmpdir.join('sub').mkdir()
+    tmpdir.join('sub', 'sub_file.txt').write_binary(b'text')
+    tmpdir.join('sub', 'sub_image1.jpg').write_binary(b'image1')
+    tmpdir.join('sub', 'subsub').mkdir()
+    tmpdir.join('sub', 'subsub', 'subsub_file.txt').write_binary(b'text')
+    tmpdir.join('sub', 'subsub', 'subsub_image1.jpg').write_binary(b'image1')
+
+    s = FileSource(tmpdir.strpath)
+    assert sorted(s.walk_files()) == [
+        'file.txt',
+        'image1.jpg',
+        'sub/sub_file.txt',
+        'sub/sub_image1.jpg',
+        'sub/subsub/subsub_file.txt',
+        'sub/subsub/subsub_image1.jpg',
+    ]
+
+    s = FileSource(tmpdir.strpath, include='*.jpg')
+    assert sorted(s.walk_files()) == [
+        'image1.jpg',
+        'sub/sub_image1.jpg',
+        'sub/subsub/subsub_image1.jpg',
+    ]
+
+    s = FileSource(tmpdir.strpath, include=['*.jpg', '*.txt'])
+    assert sorted(s.walk_files()) == [
+        'file.txt',
+        'image1.jpg',
+        'sub/sub_file.txt',
+        'sub/sub_image1.jpg',
+        'sub/subsub/subsub_file.txt',
+        'sub/subsub/subsub_image1.jpg',
+    ]
+
+    s = FileSource(tmpdir.strpath, include='sub/sub_image1.jpg')
+    assert sorted(s.walk_files()) == [
+        'sub/sub_image1.jpg',
+    ]
+
+    s = FileSource(tmpdir.strpath, include=['*.jpg', '*.txt'], exclude='file.txt')
+    assert sorted(s.walk_files()) == [
+        'image1.jpg',
+        'sub/sub_file.txt',
+        'sub/sub_image1.jpg',
+        'sub/subsub/subsub_file.txt',
+        'sub/subsub/subsub_image1.jpg',
+    ]
+
+    s = FileSource(tmpdir.strpath, include=('*.jpg', '*.txt'), exclude=('sub/subsub/subsub_file.txt', '*.jpg'))
+    assert sorted(s.walk_files()) == [
+        'file.txt',
+        'sub/sub_file.txt',
+    ]
 
 
 @pytest.mark.skipif(not hasattr(os, 'symlink'), reason='no os.symlink()')
