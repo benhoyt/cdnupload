@@ -10,6 +10,7 @@ https://cdnupload.com/
 TODO:
 * tests
   - test handling of unicode filenames (round trip)
+* support for parallel s3 uploads (multiprocessing.dummy thread pool?)
 * python2 support
 * cdnupload.com website, dual licensing, etc
 * README, LICENSE, etc
@@ -289,7 +290,7 @@ class Destination(object):
 class FileDestination(Destination):
     """Copies files to a destination directory.
 
-    required argument ("destinaton" command line parameter):
+    required argument ("destination" command line parameter):
       root           root of destination directory to copy to
     """
 
@@ -320,7 +321,7 @@ class FileDestination(Destination):
 class S3Destination(Destination):
     """Uploads files to an Amazon S3 bucket using the boto3 library.
 
-    required argument ("destinaton" command line parameter):
+    required argument ("destination" command line parameter):
       s3_url         S3 bucket and key prefix in s3://bucket/key/prefix form
                      (trailing slash is added to key prefix if not present)
 
