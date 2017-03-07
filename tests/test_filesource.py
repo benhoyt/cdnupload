@@ -97,9 +97,32 @@ def test_make_key():
     assert s.make_key('script.js', 'deadbeef0123456789') == 'script_deadbeef0123456789.js'
 
 
+def test_walk_files_dot_names(tmpdir):
+    tmpdir.join('.dot_dir').mkdir()
+    tmpdir.join('.dot_dir', '.dot_dir_dot_file').write_binary(b'test2')
+    tmpdir.join('.dot_dir', 'dot_dir_file').write_binary(b'test1')
+    tmpdir.join('.dot_file').write_binary(b'test3')
+    tmpdir.join('dir').mkdir()
+    tmpdir.join('dir', '.dir_dot_file').write_binary(b'test5')
+    tmpdir.join('dir', 'dir_file').write_binary(b'test4')
+    tmpdir.join('file').write_binary(b'test6')
 
-def test_walk_files(tmpdir):
-    pass  # TODO: dot_names, include, exclude
+    s = FileSource(tmpdir.strpath)
+    assert sorted(s.walk_files()) == ['dir/dir_file', 'file']
+
+    s = FileSource(tmpdir.strpath, dot_names=True)
+    assert sorted(s.walk_files()) == [
+        '.dot_dir/.dot_dir_dot_file',
+        '.dot_dir/dot_dir_file',
+        '.dot_file',
+        'dir/.dir_dot_file',
+        'dir/dir_file',
+        'file',
+    ]
+
+
+def test_walk_files_include_exclude(tmpdir):
+    pass # TODO
 
 
 @pytest.mark.skipif(not hasattr(os, 'symlink'), reason='no os.symlink()')
@@ -116,10 +139,10 @@ def test_walk_files_follow_symlinks(tmpdir):
         pytest.skip('symlinks only supported on Windows Vista or later')
 
     s = FileSource(tmpdir.join('walkdir').strpath)
-    assert list(s.walk_files()) == ['file']
+    assert sorted(s.walk_files()) == ['file']
 
     s = FileSource(tmpdir.join('walkdir').strpath, follow_symlinks=True)
-    assert list(s.walk_files()) == ['file', 'link/test.txt']
+    assert sorted(s.walk_files()) == ['file', 'link/test.txt']
 
 
 def test_walk_files_errors(tmpdir):
@@ -150,15 +173,15 @@ def test_walk_files_errors(tmpdir):
     check_walk_error(s, 'bad_dir')
 
     s = FileSource(tmpdir.strpath, ignore_walk_errors=True, _os_walk=mock_os_walk)
-    assert list(s.walk_files()) == ['script.js', 'good_dir/test.txt']
+    assert sorted(s.walk_files()) == ['good_dir/test.txt', 'script.js']
 
 
 def test_walk_files_unicode(tmpdir):
     tmpdir.join('foo\u2012.txt').write_binary(b'unifoo')
     s = FileSource(tmpdir.strpath)
-    assert list(s.walk_files()) == ['foo\u2012.txt']
+    assert sorted(s.walk_files()) == ['foo\u2012.txt']
     s = FileSource(bytes(tmpdir.strpath, sys.getfilesystemencoding()))
-    assert list(s.walk_files()) == ['foo\u2012.txt']
+    assert sorted(s.walk_files()) == ['foo\u2012.txt']
 
 
 def test_build_key_map(tmpdir):
@@ -176,4 +199,23 @@ def test_build_key_map(tmpdir):
 
 
 def test_build_key_map_caching(tmpdir):
-    pass # TODO
+    tmpdir.join('test.txt').write_binary(b'foo')
+
+    num_walks = [0]
+    def count_os_walk(*args, **kwargs):
+        num_walks[0] += 1
+        for root, dirs, files in os.walk(*args, **kwargs):
+            yield (root, dirs, files)
+
+    s = FileSource(tmpdir.strpath, _os_walk=count_os_walk)
+    assert s.build_key_map() == {'test.txt': 'test_0beec7b5ea3f0fdb.txt'}
+    assert num_walks[0] == 1
+    assert s.build_key_map() == {'test.txt': 'test_0beec7b5ea3f0fdb.txt'}
+    assert num_walks[0] == 1
+
+    num_walks[0] = 0
+    s = FileSource(tmpdir.strpath, cache_key_map=False, _os_walk=count_os_walk)
+    assert s.build_key_map() == {'test.txt': 'test_0beec7b5ea3f0fdb.txt'}
+    assert num_walks[0] == 1
+    assert s.build_key_map() == {'test.txt': 'test_0beec7b5ea3f0fdb.txt'}
+    assert num_walks[0] == 2
