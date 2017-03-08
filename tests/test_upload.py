@@ -33,23 +33,33 @@ def test_upload(tmpdir):
         'images/2_08fda0244b5397e0.jpg',
     ]
 
+    class CountingDestination(FileDestination):
+        def upload(self, key, source, rel_path):
+            self._uploads += 1
+            return FileDestination.upload(self, key, source, rel_path)
+
     s = FileSource(tmpdir.join('src').strpath)
-    d = FileDestination(tmpdir.join('dest').strpath)
+    d = CountingDestination(tmpdir.join('dest').strpath)
+    d._uploads = 0
 
     result = upload(s, d, dry_run=True)
     assert result == (3, 3, 0)
+    assert d._uploads == 0
     assert list_files(tmpdir.join('dest').strpath) == []
 
     result = upload(s, d)
     assert result == (3, 3, 0)
+    assert d._uploads == 3
     assert list_files(tmpdir.join('dest').strpath) == dest_keys
 
     result = upload(s, d)
     assert result == (3, 0, 0)
+    assert d._uploads == 3
     assert list_files(tmpdir.join('dest').strpath) == dest_keys
 
     result = upload(s, d, force=True)
     assert result == (3, 3, 0)
+    assert d._uploads == 6
     assert list_files(tmpdir.join('dest').strpath) == dest_keys
 
 

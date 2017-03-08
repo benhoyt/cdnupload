@@ -11,6 +11,8 @@ TODO:
 * tests
   - test handling of unicode filenames (round trip)
 
+* remove include/exclude dirs in walk_files() more efficiently if they match?
+
 * support for parallel s3 uploads (multiprocessing.dummy thread pool?)
     START:
     if num_threads > 1:
