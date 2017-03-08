@@ -37,6 +37,7 @@ TODO:
 from __future__ import print_function
 
 import argparse
+import errno
 import fnmatch
 import hashlib
 import json
@@ -327,7 +328,14 @@ class FileDestination(Destination):
 
     def upload(self, key, source, rel_path):
         dest_path = os.path.join(self.root, key)
-        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+
+        try:
+            os.makedirs(os.path.dirname(dest_path))
+        except OSError as error:
+            # Because the "exist_ok" param doesn't (ahem) exist on Python 2.x
+            if error.errno != errno.EEXIST:
+                raise
+
         with source.open(rel_path) as source_file:
             with open(dest_path, 'wb') as dest_file:
                 shutil.copyfileobj(source_file, dest_file)
