@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-from cdnupload import FileSource, DestinationError, FileDestination, upload
+from cdnupload import SourceError, DestinationError, FileSource, FileDestination, upload
 
 
 def list_files(top):
@@ -38,7 +38,7 @@ def test_upload(tmpdir):
             self._uploads += 1
             return FileDestination.upload(self, key, source, rel_path)
 
-    s = FileSource(tmpdir.join('src').strpath)
+    s = tmpdir.join('src').strpath
     d = CountingDestination(tmpdir.join('dest').strpath)
     d._uploads = 0
 
@@ -68,21 +68,41 @@ def test_upload_errors(tmpdir):
     tmpdir.join('src', 'file1.txt').write_binary(b'file.txt')
     tmpdir.join('src', 'file2.txt').write_binary(b'file.txt')
 
-    class ErroringDestination(FileDestination):
+    class ErrorUploadDestination(FileDestination):
         def upload(self, key, source, rel_path):
             if rel_path == 'file1.txt':
-                raise DestinationError('error', Exception('exception'), key=key)
+                raise Exception('error')
             else:
                 return FileDestination.upload(self, key, source, rel_path)
 
     s = FileSource(tmpdir.join('src').strpath)
-    d = ErroringDestination(tmpdir.join('dest').strpath)
+    du = ErrorUploadDestination(tmpdir.join('dest').strpath)
     with pytest.raises(DestinationError):
-        upload(s, d)
+        upload(s, du)
     assert list_files(tmpdir.join('dest').strpath) == []
 
-    result = upload(s, d, continue_on_errors=True)
+    result = upload(s, du, continue_on_errors=True)
     assert result == (2, 1, 1)
     assert list_files(tmpdir.join('dest').strpath) == [
         'file2_5436437fa01a7d3e.txt',
     ]
+
+    class ErrorKeysDestination(FileDestination):
+        def keys(self):
+            raise Exception('error')
+
+    dk = ErrorKeysDestination(tmpdir.join('dest').strpath)
+    with pytest.raises(DestinationError):
+        upload(s, dk)
+    with pytest.raises(DestinationError):
+        upload(s, dk, continue_on_errors=True)
+
+    class ErrorKeyMapSource(FileSource):
+        def build_key_map(self):
+            raise Exception('error')
+
+    sk = ErrorKeyMapSource(tmpdir.join('src').strpath)
+    with pytest.raises(SourceError):
+        upload(sk, du)
+    with pytest.raises(SourceError):
+        upload(sk, du, continue_on_errors=True)
