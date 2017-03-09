@@ -8,8 +8,8 @@ https://cdnupload.com/
 
 
 TODO:
-* tests
-  - test handling of unicode filenames (round trip)
+* tests: more unicode filename tests: src, dest, s3?
+* tests: real S3 tests
 
 * remove include/exclude dirs in walk_files() more efficiently if they match?
 
@@ -29,7 +29,6 @@ TODO:
         logger.info('waiting for parallel uploads to finish')
         thread_pool.join() # or whatever
 
-* python2 support
 * cdnupload.com website, dual licensing, etc
 * README, LICENSE, etc
 """
