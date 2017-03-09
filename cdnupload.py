@@ -425,6 +425,9 @@ class S3Destination(Destination):
         )
         for response in pages:
             for obj in response.get('Contents', []):
+                if obj['Key'].endswith('/'):
+                    # Don't return "folders", empty keys that end with '/'
+                    continue
                 yield obj['Key']
 
     def upload(self, key, source, rel_path):
