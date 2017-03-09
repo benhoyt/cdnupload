@@ -641,8 +641,8 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
     parser.add_argument('destination',
                         help='destination directory (or s3://bucket/path)')
     parser.add_argument('dest_args', nargs='*', default=[],
-                        help='optional Destination() keyword args, for example '
-                             'access-key=XYZ')
+                        help='optional Destination() keyword args, for example: '
+                             '"max-age=3600"')
 
     parser.add_argument('-a', '--action', default='upload',
                         choices=['upload', 'delete', 'dest-help'],
