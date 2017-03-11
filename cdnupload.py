@@ -8,6 +8,14 @@ https://cdnupload.com/
 
 
 TODO:
+* website
+  - home/landing page
+  - distribution: PyPI, download links, other?
+  - documentation: installation, usage, examples (just GitHub README?), contributing guide
+  - faq (on GitHub wiki?)
+  - licenses (AGPL plus commercial)
+  - payment/Stripe (or Plasso.com?)
+
 * tests: more unicode filename tests: src, dest, s3?
 * tests: real S3 tests
 
@@ -28,9 +36,6 @@ TODO:
     if num_threads > 1:
         logger.info('waiting for parallel uploads to finish')
         thread_pool.join() # or whatever
-
-* cdnupload.com website, dual licensing, etc
-* README, LICENSE, etc
 """
 
 from __future__ import print_function

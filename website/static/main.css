@@ -127,17 +127,22 @@ hr{margin-top:3rem;margin-bottom:3.5rem;border-width:0;border-top:1px solid #E1E
 
 /* cdnupload CSS */
 
+h2 {
+    font-size: 3rem;
+}
+
 .container {
     margin-top: 3rem;
 }
 
 button {
+    font-size: 1.5rem;
     background-color: white;
 }
 
 button.button-primary {
-    background-color: #b21972;
-    border-color: #b21972;
+    background-color: #10a010;
+    border-color: #10a010;
 }
 
 button.button-primary:hover,
@@ -173,4 +178,32 @@ textarea:focus {
 
 p {
     margin: 1.2rem 0;
+}
+
+h3 {
+    font-size: 1.7rem;
+    font-weight: bold;
+    letter-spacing: 0;
+    margin-bottom: 0;
+}
+
+pre {
+    margin-top: 1rem;
+    font-size: 95%;
+}
+
+pre .output {
+    color: #aaa;
+}
+
+.cdnupload {
+    font-weight: bold;
+}
+
+.price-tier h3 {
+    font-size: 2.5rem;
+}
+
+.price-tier .price {
+    font-size: 3rem;
 }
