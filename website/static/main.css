@@ -127,8 +127,27 @@ hr{margin-top:3rem;margin-bottom:3.5rem;border-width:0;border-top:1px solid #E1E
 
 /* cdnupload CSS */
 
+body {
+    font-family: Montserrat;
+    font-size: 16px;
+}
+
+h1 {
+    font-size: 60px;
+    margin: 50px 0 10px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #10a010;
+}
+
+.subtitle {
+    font-size: 24px;
+    margin-bottom: 70px;
+}
+
 h2 {
-    font-size: 3rem;
+    font-size: 45px;
+    margin: 50px 0 20px 0;
+    text-align: center;
 }
 
 .container {
@@ -136,7 +155,7 @@ h2 {
 }
 
 button {
-    font-size: 1.5rem;
+    font-size: 14px;
     background-color: white;
 }
 
@@ -148,8 +167,8 @@ button.button-primary {
 button.button-primary:hover,
 button.button-primary:focus
 {
-    background-color: #77114c;
-    border-color: #77114c;
+    background-color: #047004;
+    border-color: #047004;
 }
 
 a {
@@ -161,8 +180,8 @@ a:hover {
 }
 
 li {
-    text-indent: -3rem;
-    padding-left: 3rem;
+    text-indent: -3.4rem;
+    padding-left: 3.4rem;
 }
 
 blockquote {
@@ -176,20 +195,18 @@ textarea:focus {
     border: 1px solid #b21972;
 }
 
-p {
-    margin: 1.2rem 0;
-}
-
 h3 {
-    font-size: 1.7rem;
+    font-size: 16px;
     font-weight: bold;
     letter-spacing: 0;
     margin-bottom: 0;
 }
 
 pre {
-    margin-top: 1rem;
-    font-size: 95%;
+    padding: 7px;
+    background-color: #f8f8f8;
+    margin: 0.8rem 0 3.6rem 0;
+    font-size: 14px;
 }
 
 pre .output {
@@ -201,9 +218,41 @@ pre .output {
 }
 
 .price-tier h3 {
-    font-size: 2.5rem;
+    font-size: 25px;
 }
 
 .price-tier .price {
-    font-size: 3rem;
+    font-size: 35px;
+}
+
+.price-tier button {
+    margin: 0 0 10px 0;
+}
+
+.price-tier .learn-more {
+    font-size: 13px;
+    margin: 0 0 30px 0;
+}
+
+ul {
+    list-style-type: disc;
+}
+
+footer {
+    margin: 70px 0 50px 0;
+    padding-top: 10px;
+    border-top: 2px solid #eee;
+    font-size: 13px;
+}
+
+footer .copyright {
+    color: #999;
+}
+
+footer .links {
+    float: right;
+}
+
+.pricing {
+    margin: 50px 0 20px 0;
 }

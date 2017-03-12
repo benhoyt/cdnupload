@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Upload static files from a source directory to a destination directory or Amazon S3 bucket, with content-based hash in filenames for versioning">
     <meta name="keywords" content="cdnupload, cdn, upload, python, s3, amazon s3, content-based hashing, hash">
-    <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,300,600" rel="stylesheet" type="text/css">
     <link rel="stylesheet" href="static/main.css">
 <!--    <link rel="shortcut icon" type="image/png" href="static/favicon.png"> -->
 
@@ -15,79 +15,103 @@
 <body class="home">
 <div class="container">
     <h1>cdnupload</h1>
-
-    <h2>"Caching is Better with Hashing." Keep your website fast, and don't break CSS and JavaScript when you deploy.</h2>
+    <p class="subtitle">Keep your website fast and your deploys snappy. <i>Caching is better with hashing.</i></p>
 
     <div class="row">
         <div class="one-half column">
-            <p><span class="cdnupload">cdnupload</span> uploads your website's static files to a CDN with a content-based hash in the filename, giving great caching while avoiding versioning issues.</p>
+            <p><span class="cdnupload">cdnupload</span> uploads your website’s static files to a CDN with a content-based hash in the filename, giving great caching while avoiding versioning issues.</p>
 
             <ul>
                 <li>Fast and simple to integrate</li>
-                <li>Uses web performance best practices</li>
+                <li>Helps you follow web best practices: use a CDN, good Cache-Control headers, versioned filenames</li>
                 <li>Works with web apps written in any language</li>
                 <li>Written in Python (runs on Python 2 and 3)</li>
             </ul>
+
+            <p>The tool helps you follow performance best practices by including a content-based hash in each asset filename.</p>
+
+            <p>Deploying is really fast too: only files that have actually changed will be uploaded (with a new hash).</p>
+
+            <p>cdnupload is free for fully open source websites, and two commercial license options are available with support. <a href="">Read why cdnupload is multi-licensed.</a></p>
         </div>
         <div class="one-half column">
-            <h3>Trivial to install:</h3>
+            <h3>Trivial to install</h3>
 <pre>$ pip install cdnupload</pre>
 
-            <h3>Easy to integrate (Python, but any language works):</h3>
-<pre>import cdnupload, settings
-
-def static_url(rel_path):
-    return '//mycdn.com' + settings.statics[rel_path]
+            <h3>Easy to integrate (in most languages)</h3>
+<pre>import json, settings
 
 def init_server():
-    source = cdnupload.FileSource('/site/static')
-    settings.statics = source.build_key_map()</pre>
+    with open('statics.json') as f:
+        settings.statics = json.load(f)
 
-            <h3>Simple to use:</h3>
-<pre>$ cdnupload /site/static s3://static-bucket \
-            --key-map=static.json
+def static_url(rel_path):
+    return '//mycdn.com' + settings.statics[rel_path]</pre>
+
+            <h3>Simple to use</h3>
+<pre>$ cdnupload /site/statics s3://statics-bucket \
+            --key-map=statics.json
 <span class="output">uploading script.js to script_8f3283c6342816f7.js
 uploading style.css to style_deadbeef01234567.css</span>
 $ deploy-my-app</pre>
         </div>
     </div>
 
-    <h2>Pricing</h2>
+    <div class="row">
+        <h2>Other Info</h2>
+        <p>This is some other info. The quick brown fox jumps over the lazy dog. This is some other info. The quick brown fox jumps over the lazy dog. This is some other info. The quick brown fox jumps over the lazy dog. This is some other info. The quick brown fox jumps over the lazy dog. 
+    </div>
 
     <div class="row">
+        <h2>Get in touch</h2>
+        <p>This is some other info. The quick brown fox jumps over the lazy dog. This is some other info. The quick brown fox jumps over the lazy dog. This is some other info. The quick brown fox jumps over the lazy dog. This is some other info. The quick brown fox jumps over the lazy dog. 
+    </div>
+
+    <div class="row pricing">
         <div class="one-third column price-tier">
             <h3>Open source website</h3>
             <p class="price">Free</p>
+            <button>GitHub project</button>
+            <p class="learn-more"><a href="">Documentation</a></p>
             <ul>
                 <li>For open source web apps</li>
                 <li>Community support</li>
-                <li><a href="TODO">AGPL license</a></li>
+                <li>Get for free, give freely</li>
+                <li>AGPL license</li>
             </ul>
-            <button>Download</button>
         </div>
+
         <div class="one-third column price-tier">
             <h3>Single website</h3>
-            <p class="price">$79</p>
+            <p class="price">$65</p>
+            <button class="button-primary">Purchase now</button>
+            <p class="learn-more"><a href="/single">Learn more</a></p>
+<!-- TODO            <p>The cost of a small team lunch</p> -->
             <ul>
                 <li>For a single website (including subdomains)</li>
                 <li>3 months of email support</li>
-                <li><a href="TODO">Perpetual license</a></li>
+                <li>Perpetual license</li>
             </ul>
-            <button class="button-primary">Buy now</button>
         </div>
+
         <div class="one-third column price-tier">
             <h3>Multi-website</h3>
-            <p class="price">$299</p>
+            <p class="price">$295</p>
+<!-- TODO            <p>The cost of a large team lunch</p> -->
+            <button class="button-primary">Purchase now</button>
+            <p class="learn-more"><a href="/multi">Learn more</a></p>
             <ul>
                 <li>For up to 10 websites</li>
                 <li>6 months of email support</li>
                 <li>3 hours of custom development</li>
-                <li><a href="TODO">Perpetual license</a></li>
+                <li>Perpetual license</li>
             </ul>
-            <button class="button-primary">Buy now</button>
         </div>
     </div>
 
-    <p>&copy; Ben Hoyt 2017</p>
+    <footer>
+        <span class="copyright">cdnupload &copy; 2017</span>
+        <span class="links"><a href="/contact">Contact Us</a></span>
+    </footer>
 </div>
 </body>
