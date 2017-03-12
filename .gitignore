@@ -4,3 +4,4 @@ __pycache__/
 .cache
 cdnupload.egg-info/
 output/
+.venv/
