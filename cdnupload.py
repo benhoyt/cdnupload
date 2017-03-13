@@ -14,7 +14,7 @@ TODO:
   - documentation: installation, usage, examples (just GitHub README?), contributing guide
   - faq (on GitHub wiki?)
   - licenses (AGPL plus commercial)
-  - payment/Stripe (or Plasso.com?)
+  - smart quotes: ’ “ ”
 
 * tests: more unicode filename tests: src, dest, s3?
 * tests: real S3 tests

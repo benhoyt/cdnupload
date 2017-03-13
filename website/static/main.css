@@ -134,20 +134,29 @@ body {
 
 h1 {
     font-size: 60px;
-    margin: 50px 0 10px 0;
+    margin: 30px 0 10px 0;
     padding-bottom: 10px;
     border-bottom: 2px solid #10a010;
 }
 
-.subtitle {
-    font-size: 24px;
-    margin-bottom: 70px;
+.tagline {
+    float: right;
+    color: #999;
+    margin-top: -5.25rem;
+    font-weight: 300;
+    font-style: italic;
 }
 
 h2 {
-    font-size: 45px;
+    font-size: 35px;
+    font-weight: 400;
     margin: 50px 0 20px 0;
     text-align: center;
+}
+
+h2.subtitle {
+     margin: 70px 0 80px 0;
+     color: #10a010;
 }
 
 .container {
@@ -180,8 +189,8 @@ a:hover {
 }
 
 li {
-    text-indent: -3.4rem;
-    padding-left: 3.4rem;
+    text-indent: -3.2rem;
+    padding-left: 3.2rem;
 }
 
 blockquote {
@@ -243,6 +252,22 @@ footer {
     padding-top: 10px;
     border-top: 2px solid #eee;
     font-size: 13px;
+}
+
+.logo {
+    float: left;
+    margin: -2px 8px -10px 0;
+    width: 24px;
+    line-height: 24px;
+    font-size: 20px;
+    text-align: center;
+    color: white;
+    background-color: #ccc;
+    border-radius: 3px;
+}
+
+.logo:after {
+    content: 'C';
 }
 
 footer .copyright {
