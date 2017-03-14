@@ -14,6 +14,7 @@ TODO:
   - documentation: installation, usage, examples (just GitHub README?), contributing guide
   - faq (on GitHub wiki?)
   - licenses (AGPL plus commercial)
+    https://www.binpress.com/license/edit/h/f7f4ba363d02bfab5b54e996a47ddeefcec16d22
   - smart quotes: ’ “ ”
 
 * tests: more unicode filename tests: src, dest, s3?
