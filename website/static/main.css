@@ -133,7 +133,7 @@ body {
 }
 
 h1 {
-    font-size: 60px;
+    font-size: 55px;
     margin: 30px 0 10px 0;
     padding-bottom: 10px;
     border-bottom: 2px solid #10a010;
@@ -142,7 +142,7 @@ h1 {
 .tagline {
     float: right;
     color: #999;
-    margin-top: -5.25rem;
+    margin-top: -5.5rem;
     font-weight: 300;
     font-style: italic;
 }
@@ -258,7 +258,7 @@ ul {
 }
 
 footer {
-    margin: 70px 0 50px 0;
+    margin: 30px 0 50px 0;
     padding-top: 10px;
     border-top: 2px solid #eee;
     font-size: 13px;
@@ -290,4 +290,15 @@ footer .links {
 
 .pricing {
     margin: 50px 0 20px 0;
+}
+
+
+/* Tablet/phone */
+
+@media (max-width: 750px) {
+
+.tagline {
+    margin-top: -0.3rem;
+}
+
 }
