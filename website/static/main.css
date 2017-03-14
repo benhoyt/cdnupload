@@ -226,8 +226,19 @@ pre .output {
     font-weight: bold;
 }
 
+.price-tier {
+    padding: 2rem;
+    margin-bottom: 4rem;
+    background-color: #f8f8f8;
+}
+
+.price-info {
+    text-align: center;
+}
+
 .price-tier h3 {
-    font-size: 25px;
+    text-align: center;
+    font-size: 23px;
 }
 
 .price-tier .price {
@@ -239,7 +250,6 @@ pre .output {
 }
 
 .price-tier .learn-more {
-    font-size: 13px;
     margin: 0 0 30px 0;
 }
 
