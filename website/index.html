@@ -37,6 +37,13 @@
             <h3>Trivial to install</h3>
 <pre>$ pip install cdnupload</pre>
 
+            <h3>Simple to use</h3>
+<pre>$ cdnupload /site/statics s3://statics-bucket
+            --key-map=statics.json
+<span class="output">uploading script.js to script_8f3283c6342816f7.js
+uploading style.css to style_deadbeef01234567.css
+writing key map JSON to statics.json</span></pre>
+
             <h3>Easy to integrate (in most languages)</h3>
 <pre>import json, settings
 
@@ -46,13 +53,6 @@ def init_server():
 
 def static_url(rel_path):
     return '//mycdn.com' + settings.statics[rel_path]</pre>
-
-            <h3>Simple to use</h3>
-<pre>$ cdnupload /site/statics s3://statics-bucket \
-            --key-map=statics.json
-<span class="output">uploading script.js to script_8f3283c6342816f7.js
-uploading style.css to style_deadbeef01234567.css</span>
-$ deploy-my-app</pre>
         </div>
     </div>
 

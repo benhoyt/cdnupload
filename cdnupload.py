@@ -17,6 +17,18 @@ TODO:
     https://www.binpress.com/license/edit/h/f7f4ba363d02bfab5b54e996a47ddeefcec16d22
   - smart quotes: ’ “ ”
 
+* Bryan's feedback on homepage:
+  - A "What's so great about using a CDN?" section would be helpful. Even more helpful
+    would be some number comparisons (eg "giftyweddings.com loads in 1.2 seconds in the
+    UK due to the big images and react.js, but using a CDN took that down to 0.5 seconds
+    on average. In the US, the speedup was less, but still significant at 0.7 vs. 0.4 seconds.")
+
+* tweak API per Bryan:
+  - have upload() and delete() return a namedtuple:
+    Result(source_key_map, destination_keys, num_scanned, num_processed, num_errors)
+  - get rid of cache_key_map now that upload/delete return Result.source_key_map
+  - upload() and delete() can take str/bytes for destination, meaning FileDestination
+
 * tests: more unicode filename tests: src, dest, s3?
 * tests: real S3 tests
 
@@ -794,9 +806,9 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
 
     if num_errors == 0 and args.key_map:
         try:
+            logger.info('writing key map JSON to {}'.format(args.key_map))
             with open(args.key_map, 'w') as f:
                 json.dump(source.build_key_map(), f, sort_keys=True, indent=4)
-            logger.info('wrote key map file as JSON to {}'.format(args.key_map))
         except Exception as error:
             logger.error('ERROR writing key map file: {}'.format(error))
             num_errors += 1
