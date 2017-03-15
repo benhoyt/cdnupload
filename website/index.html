@@ -58,7 +58,12 @@ def static_url(rel_path):
 
     <div class="row">
         <h2 id="start">Getting started</h2>
-        <p>TODO: If you just want to get stuck straight in, choose a license and then...
+        <p>If you want to get stuck straight in, choose a license below, then <a href="https://pypi.python.org/pypi/cdnupload">install cdnupload from PyPI</a> using <code>pip</code>. You’ll need to do two basic things:</p>
+
+        <ul>
+            <li><b>Integrate cdnupload with your web server.</b> This is so that it knows how to output static URLs with the correct content hashes in asset filenames. For example, you might call the <code>static_url()</code> function shown above in your HTML templates like this (Jinja2 example): <code>&lt;link rel="stylesheet" href="{{ 'style.css'|static_url }}"&gt;</code>.</li>
+            <li><b>Add the upload step to your deployment process.</b> This makes</li>
+        </ul>
     </div>
 
     <div class="row">
@@ -67,8 +72,8 @@ def static_url(rel_path):
     </div>
 
     <div class="row">
-        <h2>Other Info</h2>
-        <p>This is some other info. The quick brown fox jumps over the lazy dog. This is some other info. The quick brown fox jumps over the lazy dog. This is some other info. The quick brown fox jumps over the lazy dog. This is some other info. The quick brown fox jumps over the lazy dog. 
+        <h2>Contributing</h2>
+        <p>TODO: brief overview and link to CONTRIBUTING.md</p>
     </div>
 
     <div class="row">
