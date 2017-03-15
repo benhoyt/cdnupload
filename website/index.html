@@ -11,18 +11,18 @@
 </head>
 <body class="home">
 <div class="container">
-    <h1>cdnupload</h1>
+    <h1 id="top">cdnupload</h1>
     <div class="tagline">Caching is better with hashing</div>
 
     <h2 class="subtitle">Keep your website fast and your deploys snappy</h2>
 
     <div class="row">
-        <div class="one-half column">
+        <div class="one-half column" id="blurb">
             <p><span class="cdnupload">cdnupload</span> uploads your website’s static files to a CDN with a content-based hash in the filename, giving great caching while avoiding versioning issues.</p>
 
             <ul>
                 <li>Fast and simple to integrate</li>
-                <li>Helps you follow web best practices: use a CDN, good Cache-Control headers, versioned filenames</li>
+                <li>Helps you follow web best practices: <a href="#cdn">use a CDN</a>, good Cache-Control headers, versioned filenames</li>
                 <li>Works with web apps written in any language</li>
                 <li>Written in Python (runs on Python 2 and 3)</li>
             </ul>
@@ -31,9 +31,9 @@
 
             <p>Deploying is really fast too: only files that have actually changed will be uploaded (with a new hash).</p>
 
-            <p>cdnupload is free for fully open source websites, and two commercial license options are available with support. <a href="">Read why cdnupload is multi-licensed.</a></p>
+            <p>cdnupload is free for fully open source websites, and two commercial license options are available with support plans. <a href="#pricing">See licenses and pricing.</a></p>
         </div>
-        <div class="one-half column">
+        <div class="one-half column" id="usage">
             <h3>Trivial to install</h3>
 <pre>$ pip install cdnupload</pre>
 
@@ -57,16 +57,26 @@ def static_url(rel_path):
     </div>
 
     <div class="row">
+        <h2 id="start">Getting started</h2>
+        <p>TODO: If you just want to get stuck straight in, choose a license and then...
+    </div>
+
+    <div class="row">
+        <h2 id="cdn">Why should I use a CDN?</h2>
+        <p>TODO: What is a CDN. When you don't need a CDN (but can still use cdnupload). Link to Google's web performance docs. Some numbers. Etc.
+    </div>
+
+    <div class="row">
         <h2>Other Info</h2>
         <p>This is some other info. The quick brown fox jumps over the lazy dog. This is some other info. The quick brown fox jumps over the lazy dog. This is some other info. The quick brown fox jumps over the lazy dog. This is some other info. The quick brown fox jumps over the lazy dog. 
     </div>
 
     <div class="row">
-        <h2>Get in touch</h2>
-        <p>This is some other info. The quick brown fox jumps over the lazy dog. This is some other info. The quick brown fox jumps over the lazy dog. This is some other info. The quick brown fox jumps over the lazy dog. This is some other info. The quick brown fox jumps over the lazy dog. 
+        <h2 id="licensing">Multi-licensing</h2>
+        <p>TODO: example the multi-license model. 
     </div>
 
-    <div class="row pricing">
+    <div class="row pricing" id="pricing">
         <div class="one-third column price-tier">
             <div class="price-info">
                 <h3>Open source website</h3>
@@ -116,7 +126,7 @@ def static_url(rel_path):
     <footer>
         <a href="/"><div class="logo"></div></a>
         <span class="copyright">cdnupload &copy; 2017</span>
-        <span class="links"><a href="/contact">Contact Us</a></span>
+        <span class="links"><a href="mailto:info@cdnupload.com">info@cdnupload.com</a></span>
     </footer>
 </div>
 

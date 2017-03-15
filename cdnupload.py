@@ -9,12 +9,11 @@ https://cdnupload.com/
 
 TODO:
 * website
-  - home/landing page
-  - distribution: PyPI, download links, other?
   - documentation: installation, usage, examples (just GitHub README?), contributing guide
   - faq (on GitHub wiki?)
   - licenses (AGPL plus commercial)
     https://www.binpress.com/license/edit/h/f7f4ba363d02bfab5b54e996a47ddeefcec16d22
+  - be sure to use cdnupload for cdnupload.com :-)
   - smart quotes: ’ “ ”
 
 * Bryan's feedback on homepage:
@@ -28,6 +27,11 @@ TODO:
     Result(source_key_map, destination_keys, num_scanned, num_processed, num_errors)
   - get rid of cache_key_map now that upload/delete return Result.source_key_map
   - upload() and delete() can take str/bytes for destination, meaning FileDestination
+
+* add a "agree to license" prompt the first time, and an --agree-to-license or --no-prompt
+  command line option to suppress
+
+* put on PyPI
 
 * tests: more unicode filename tests: src, dest, s3?
 * tests: real S3 tests
