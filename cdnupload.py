@@ -10,6 +10,8 @@ https://cdnupload.com/
 TODO:
 * website
   - documentation: installation, usage, examples (just GitHub README?), contributing guide
+    - note about using PostCSS and postcss-url or similar if you have static URLs in your CSS
+      See Oyster's gulpfile.js and assetUrlManager.js
   - faq (on GitHub wiki?)
   - licenses (AGPL plus commercial)
     https://www.binpress.com/license/edit/h/f7f4ba363d02bfab5b54e996a47ddeefcec16d22
@@ -27,6 +29,8 @@ TODO:
     Result(source_key_map, destination_keys, num_scanned, num_processed, num_errors)
   - get rid of cache_key_map now that upload/delete return Result.source_key_map
   - upload() and delete() can take str/bytes for destination, meaning FileDestination
+
+* consider changing Destination.keys() to .walk_keys() to avoid confusion with dict/mapping
 
 * add a "agree to license" prompt the first time, and an --agree-to-license or --no-prompt
   command line option to suppress

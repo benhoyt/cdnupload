@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="utf-8">
     <title>cdnupload - Upload static files to directory or CDN, using content-based hashing</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Upload static files from a source directory to a destination directory or Amazon S3 bucket, with content-based hash in filenames for versioning">
@@ -41,7 +42,7 @@
 <pre>$ cdnupload /site/statics s3://statics-bucket
             --key-map=statics.json
 <span class="output">uploading script.js to script_8f3283c6342816f7.js
-uploading style.css to style_deadbeef01234567.css
+uploading style.css to style_abcdef0123456789.css
 writing key map JSON to statics.json</span></pre>
 
             <h3>Easy to integrate (in most languages)</h3>
@@ -56,19 +57,34 @@ def static_url(rel_path):
         </div>
     </div>
 
-    <div class="row">
-        <h2 id="start">Getting started</h2>
-        <p>If you want to get stuck straight in, choose a license below, then <a href="https://pypi.python.org/pypi/cdnupload">install cdnupload from PyPI</a> using <code>pip</code>. You’ll need to do two basic things:</p>
+    <h2 id="start">Getting started</h2>
+    <p>To get stuck straight in, choose a license below, then <a href="https://pypi.python.org/pypi/cdnupload">install cdnupload from PyPI</a> using <code>pip</code>. You’ll need to do two basic things:</p>
 
-        <ul>
-            <li><b>Integrate cdnupload with your web server.</b> This is so that it knows how to output static URLs with the correct content hashes in asset filenames. For example, you might call the <code>static_url()</code> function shown above in your HTML templates like this (Jinja2 example): <code>&lt;link rel="stylesheet" href="{{ 'style.css'|static_url }}"&gt;</code>.</li>
-            <li><b>Add the upload step to your deployment process.</b> This makes</li>
-        </ul>
+    <div class="row">
+        <div class="one-half column">
+            <p><b>Integrate cdnupload with your web server.</b> This is so that it knows how to output static URLs with the correct content hashes in asset filenames. For example, you might call the <code>static_url</code> function shown above in your HTML templates like this (Jinja2 example):</p>
+
+<pre>&lt;link rel="stylesheet"
+      href="{{ 'style.css'|static_url }}"&gt;</pre>
+
+            <p>This will output a link to the stylesheet with the current content hash in the filename, eg: <code>style_abcdef0123456789.css</code>.</p>
+            <p>If you have asset URLs in your CSS, for example for background images, use a tool like PostCSS to generate those. <a href="TODO">Read the full documentation here.</a></p>
+        </div>
+        <div class="one-half column">
+            <p><b>Add the upload step to your deployment process.</b> This makes the static files available to users immediately whent the deployment is live. Use the cdnupload command line to control what files are uploaded and where they go (a directory for serving via nginx or Apache, or Amazon S3). This can be as simple as:</p>
+
+<pre>cdnupload /site/statics s3://statics-bucket</pre>
+
+            <p>Generally you’ll want a CDN in front of the file or S3 origin server, but this is not a requirement.</p>
+
+            <p>There are a lot of customization options available for more advanced scenarios &mdash; see documentation for more info.</p>
+        </div>
     </div>
 
     <div class="row">
         <h2 id="cdn">Why should I use a CDN?</h2>
-        <p>TODO: What is a CDN. When you don't need a CDN (but can still use cdnupload). Link to Google's web performance docs. Some numbers. Etc.
+        <p>
+        TODO: What is a CDN. When you don't need a CDN (but can still use cdnupload). Link to Google's web performance docs. Some numbers. Etc.
     </div>
 
     <div class="row">
