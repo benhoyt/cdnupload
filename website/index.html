@@ -68,7 +68,7 @@ def static_url(rel_path):
       href="{{ 'style.css'|static_url }}"&gt;</pre>
 
             <p>This will output a link to the stylesheet with the current content hash in the filename, eg: <code>style_abcdef0123456789.css</code>.</p>
-            <p>If you have asset URLs in your CSS, for example for background images, use a tool like PostCSS to generate those. <a href="TODO">Read the full documentation here.</a></p>
+            <p>If you have asset URLs in your CSS, for example for background images, use a tool like PostCSS to generate those.</p>
         </div>
         <div class="one-half column">
             <p><b>Add the upload step to your deployment process.</b> This makes the static files available to users immediately whent the deployment is live. Use the cdnupload command line to control what files are uploaded and where they go (a directory for serving via nginx or Apache, or Amazon S3). This can be as simple as:</p>
@@ -80,11 +80,21 @@ def static_url(rel_path):
             <p>There are a lot of customization options available for more advanced scenarios &mdash; see documentation for more info.</p>
         </div>
     </div>
+    <p style="text-align: center;"><a href="TODO"><button>Read the full documentation</button></a></p>
 
+    <h2 id="cdn">Why should I use a CDN?</h2>
     <div class="row">
-        <h2 id="cdn">Why should I use a CDN?</h2>
-        <p>
-        TODO: What is a CDN. When you don't need a CDN (but can still use cdnupload). Link to Google's web performance docs. Some numbers. Etc.
+        <p>CDN stands for Content Delivery Network (one of those super-generic names, like Content Management System), which is a service that serves your static files -- but heavily cached, on servers around the world that are close to your users.</p>
+
+        <p>So if someone from New Jersey requests <code>https://mycdn.com/style.css</code>, the CDN will almost certainly have a cached version in an East Coast or even a local New Jersey data center, and will serve that up to the user faster than you can say “HTTP/2”.</p>
+
+        <p>If the CDN doesn’t have a cached version of the file, it will in turn request it from the origin server (where the files are hosted). If you’re using something like Amazon S3 as your origin server, that request will be quick too, and user will still get the file in good time. From then on, the CDN will serve the cached version.</p>
+
+        <p>Because the files are heavily cached (ideally with long expiry ties), you need to include version numbers in the filenames. cdnupload does this by appending to the filename a 16-character hash based on the file’s contents. For example, <code>style.css</code> might become <code>style_abcdef0123456789.css</code>, and then <code>style_a0b1c2d3e4f56789.css</code> in the next revision.</p>
+
+        <p>So you should use a CDN if your site gets a good amount of traffic, and you need good performance from various locations around the world. You probably <i>don’t</i> need to use a CDN if you have a small personal site and aren’t too concerned with global performance.</p>
+
+        <p>Using the <a href="https://aws.amazon.com/cloudfront/">Amazon CloudFront</a> CDN together with <a href="https://aws.amazon.com/s3/">Amazon S3</a> as an origin server is a great place to start&nbsp;&mdash; like other AWS products, you only pay for the bytes you use, and there’s no montly fee.</p>
     </div>
 
     <div class="row">
