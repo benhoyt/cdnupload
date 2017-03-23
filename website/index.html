@@ -11,6 +11,9 @@
     <link rel="shortcut icon" type="image/png" href="static/favicon.png">
 </head>
 <body class="home">
+
+<div style="text-align: center; padding: 1rem; background-color: red; color: white;">cdnupload is coming soon! Please contact author <a href="http://benhoyt.com/" style="color: white;">Ben Hoyt</a> in the meantime.</div>
+
 <div class="container">
     <h1 id="top">cdnupload</h1>
     <div class="tagline">Caching is better with hashing</div>
@@ -77,35 +80,37 @@ def static_url(rel_path):
 
             <p>Generally you’ll want a CDN in front of the file or S3 origin server, but this is not a requirement.</p>
 
-            <p>There are a lot of customization options available for more advanced scenarios &mdash; see documentation for more info.</p>
+            <p>There are a lot of customization options available for more advanced scenarios&nbsp;&mdash; see documentation for more info.</p>
         </div>
     </div>
     <p style="text-align: center;"><a href="TODO"><button>Read the full documentation</button></a></p>
 
     <h2 id="cdn">Why should I use a CDN?</h2>
-    <div class="row">
-        <p>CDN stands for Content Delivery Network (one of those super-generic names, like Content Management System), which is a service that serves your static files -- but heavily cached, on servers around the world that are close to your users.</p>
+    <p>CDN stands for Content Delivery Network (one of those super-generic names, like Content Management System), which is a service that serves your static files&nbsp;&mdash; but heavily cached, on servers around the world that are close to your users.</p>
 
-        <p>So if someone from New Jersey requests <code>https://mycdn.com/style.css</code>, the CDN will almost certainly have a cached version in an East Coast or even a local New Jersey data center, and will serve that up to the user faster than you can say “HTTP/2”.</p>
+    <p>So if someone from New Jersey requests <code>https://mycdn.com/style.css</code>, the CDN will almost certainly have a cached version in an East Coast or even a local New Jersey data center, and will serve that up to the user faster than you can say “HTTP/2”.</p>
 
-        <p>If the CDN doesn’t have a cached version of the file, it will in turn request it from the origin server (where the files are hosted). If you’re using something like Amazon S3 as your origin server, that request will be quick too, and user will still get the file in good time. From then on, the CDN will serve the cached version.</p>
+    <p>If the CDN doesn’t have a cached version of the file, it will in turn request it from the origin server (where the files are hosted). If you’re using something like Amazon S3 as your origin server, that request will be quick too, and user will still get the file in good time. From then on, the CDN will serve the cached version.</p>
 
-        <p>Because the files are heavily cached (ideally with long expiry ties), you need to include version numbers in the filenames. cdnupload does this by appending to the filename a 16-character hash based on the file’s contents. For example, <code>style.css</code> might become <code>style_abcdef0123456789.css</code>, and then <code>style_a0b1c2d3e4f56789.css</code> in the next revision.</p>
+    <p>Because the files are heavily cached (ideally with long expiry ties), you need to include version numbers in the filenames. cdnupload does this by appending to the filename a 16-character hash based on the file’s contents. For example, <code>style.css</code> might become <code>style_abcdef0123456789.css</code>, and then <code>style_a0b1c2d3e4f56789.css</code> in the next revision.</p>
 
-        <p>So you should use a CDN if your site gets a good amount of traffic, and you need good performance from various locations around the world. You probably <i>don’t</i> need to use a CDN if you have a small personal site and aren’t too concerned with global performance.</p>
+    <p>So you should use a CDN if your site gets a good amount of traffic, and you need good performance from various locations around the world. You probably <i>don’t</i> need to use a CDN if you have a small personal site and aren’t too concerned with global performance.</p>
 
-        <p>Using the <a href="https://aws.amazon.com/cloudfront/">Amazon CloudFront</a> CDN together with <a href="https://aws.amazon.com/s3/">Amazon S3</a> as an origin server is a great place to start&nbsp;&mdash; like other AWS products, you only pay for the bytes you use, and there’s no montly fee.</p>
-    </div>
+    <p>Using the <a href="https://aws.amazon.com/cloudfront/">Amazon CloudFront</a> CDN together with <a href="https://aws.amazon.com/s3/">Amazon S3</a> as an origin server is a great place to start&nbsp;&mdash; like other AWS products, you only pay for the bytes you use, and there’s no montly fee.</p>
 
-    <div class="row">
-        <h2>Contributing</h2>
-        <p>TODO: brief overview and link to CONTRIBUTING.md</p>
-    </div>
+    <!-- TODO: something about the author, bit more personal, etc -->
 
-    <div class="row">
-        <h2 id="licensing">Multi-licensing</h2>
-        <p>TODO: example the multi-license model. 
-    </div>
+
+    <h2 id="licensing">Multi-licensing</h2>
+
+    <p>cdnupload is distributed under multiple licenses with a simple model: if you’re giving code away, I’ll give code away. In other words, if you run a non-profit, or your website or web app is open source, you can use cdnupload freely under the AGPL license.</p>
+
+    <p>But if you’re a business making a profit, I am too. In other words, if your website or web app is not open source and you’re a for-profit company, you need to use cdnupload under one of the commercial licenses. Pricing is for life, so it’s a one-time fee, including all bugfixes and new features.</p>
+
+    <p>“But can’t I just download it straight from GitHub or PyPI?” Sure you can. But you’ll be depriving <del>my kids of bread and water</del> my wife and me of dinner dates. And more importantly, I won’t be able to fix bugs or add features nearly as quickly.</p>
+
+    <p>Pragmatically speaking, will using cdnupload speed up your website and save your team a couple of hours of dev time? Then you’ll get a return on your investment pretty quickly!</p>
+
 
     <div class="row pricing" id="pricing">
         <div class="one-third column price-tier">
