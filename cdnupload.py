@@ -1,21 +1,26 @@
-"""Upload static files to directory or CDN, using content-based hashing.
+"""Upload static files to a directory or CDN, using content-based hashing.
 
-Run "python cdnupload.py -h" for command line help. See README.rst for
-documentation, and LICENSE.txt for license information. Visit the project's
-website for more information:
+Run "python cdnupload.py -h" for command line help, or see README.rst for
+full documentation.
+
+cdnupload is (c) Ben Hoyt 2017 and licensed under multiple licenses: it's
+free for open source websites and non-profits, and there are two well-priced
+commercial licenses available for businesses.
+
+Visit the project's website for more details and for pricing information:
 
 https://cdnupload.com/
 
 
 TODO:
 * website
-  - documentation: installation, usage, examples (just GitHub README?), contributing guide
+  - documentation: licensing, installation, usage, examples (just GitHub README?), contributing guide
     - note about using PostCSS and postcss-url or similar if you have static URLs in your CSS
       See Oyster's gulpfile.js and assetUrlManager.js
-  - faq (on GitHub wiki?)
-  - licenses (AGPL plus commercial)
-    https://www.binpress.com/license/edit/h/f7f4ba363d02bfab5b54e996a47ddeefcec16d22
-  - be sure to use cdnupload for cdnupload.com :-)
+  - licenses, update LICENSE.txt with blurb and link to licenses:
+    https://www.gnu.org/licenses/agpl-3.0.en.html
+    https://cdnupload.com/single/license
+    https://cdnupload.com/multi/license
   - smart quotes: ’ “ ”
 
 * Bryan's feedback on homepage:
@@ -35,10 +40,28 @@ TODO:
 * add a "agree to license" prompt the first time, and an --agree-to-license or --no-prompt
   command line option to suppress
 
+        cdnupload is licensed under multiple licenses -- for more details, see:
+        https://cdnupload.com/#licensing
+
+          open      free for websites that are open source (AGPLv3 license)
+          single    single website commercial license with support
+          multi     multi-website commercial license with support
+
+        If you're using cdnupload for an open source website or a non-profit, type
+        "open". If you've paid for a single website or multi-website license, type
+        "single" or "multi".
+
+        You'll only have to type this once (it's saved to ~/.cdnupload/license).
+
+        YES, I AGREE to the terms of the license [open, single, multi]: 
+
 * put on PyPI
+  - shebang for script
+  - can it be installed in PATH?
 
 * tests: more unicode filename tests: src, dest, s3?
 * tests: real S3 tests
+* tests: does it work on Python 2.6? if not, show error message
 
 * remove include/exclude dirs in walk_files() more efficiently if they match?
 

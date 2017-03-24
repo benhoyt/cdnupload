@@ -1,0 +1,31 @@
+
+cdnupload is (c) Ben Hoyt 2017 and licensed under multiple licenses: it's
+free for open source websites and non-profits, and there are two well-priced
+commercial licenses available for businesses. The three license options are:
+
+
+1. Open: if the code for your website is open source, or if you're a
+non-profit organization, you can use cdnupload for free under an AGPL
+license. Read the full text of the AGPL v3 license here:
+
+    https://www.gnu.org/licenses/agpl-3.0.en.html
+
+
+2. Single-website: if your business has a single website, this commercial
+license tier is for you. See pricing, more details, and the full text of
+the license here:
+
+    https://cdnupload.com/single
+
+
+3. Multi website: this license is a commercial license for using cdnupload
+on up to 10 websites. See pricing, more details, and the full text of the
+license here:
+
+    https://cdnupload.com/multi
+
+
+If your company's requirements don't fit into any of the above, or you want
+to discuss a custom license, please contact us on:
+
+    info@cdnupload.com
