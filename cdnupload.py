@@ -14,20 +14,13 @@ https://cdnupload.com/
 
 TODO:
 * website
-  - documentation: licensing, installation, usage, examples (just GitHub README?), contributing guide
-    - note about using PostCSS and postcss-url or similar if you have static URLs in your CSS
-      See Oyster's gulpfile.js and assetUrlManager.js
-  - licenses, update LICENSE.txt with blurb and link to licenses:
-    https://www.gnu.org/licenses/agpl-3.0.en.html
-    https://cdnupload.com/single/license
-    https://cdnupload.com/multi/license
+  - CDN picture on homepage
+  - add some numbers (in bold) on how much speedup you might see from using a CDN
   - smart quotes: ’ “ ”
 
-* Bryan's feedback on homepage:
-  - A "What's so great about using a CDN?" section would be helpful. Even more helpful
-    would be some number comparisons (eg "giftyweddings.com loads in 1.2 seconds in the
-    UK due to the big images and react.js, but using a CDN took that down to 0.5 seconds
-    on average. In the US, the speedup was less, but still significant at 0.7 vs. 0.4 seconds.")
+* documentation: licensing, installation, usage, examples (just GitHub README?), contributing guide
+  - note about using PostCSS and postcss-url or similar if you have static URLs in your CSS
+    See Oyster's gulpfile.js and assetUrlManager.js
 
 * tweak API per Bryan:
   - have upload() and delete() return a namedtuple:
