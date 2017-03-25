@@ -116,3 +116,21 @@ def test_upload_errors(tmpdir):
         upload(sk, du)
     with pytest.raises(SourceError):
         upload(sk, du, continue_on_errors=True)
+
+
+def test_str_destination(tmpdir):
+    tmpdir.join('src').mkdir()
+    tmpdir.join('src', 'file.txt').write_binary(b'file.txt')
+
+    source_key_map = {
+        'file.txt': 'file_5436437fa01a7d3e.txt',
+    }
+    destination_keys = set(source_key_map.values())
+
+    s = tmpdir.join('src').strpath
+    d = tmpdir.join('dest').strpath
+    result = upload(s, d)
+    assert (result.num_scanned, result.num_processed, result.num_errors) == (1, 1, 0)
+    assert list_files(tmpdir.join('dest').strpath) == sorted(destination_keys)
+    assert result.source_key_map == source_key_map
+    assert result.destination_keys == set()

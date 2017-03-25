@@ -468,6 +468,8 @@ def upload(source, destination, force=False, dry_run=False,
     """
     if isinstance(source, (str, bytes)):
         source = FileSource(source)
+    if isinstance(destination, (str, bytes)):
+        destination = FileDestination(destination)
 
     try:
         source_key_map = source.build_key_map()
@@ -553,6 +555,8 @@ def delete(source, destination, force=False, dry_run=False,
     """
     if isinstance(source, (str, bytes)):
         source = FileSource(source)
+    if isinstance(destination, (str, bytes)):
+        destination = FileDestination(destination)
 
     try:
         source_key_map = source.build_key_map()

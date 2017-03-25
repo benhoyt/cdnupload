@@ -145,3 +145,16 @@ def test_delete_errors(tmpdir):
         delete(sk, dd)
     with pytest.raises(SourceError):
         delete(sk, dd, continue_on_errors=True)
+
+
+def test_str_destination(tmpdir):
+    tmpdir.join('src').mkdir()
+    tmpdir.join('src', 'file.txt').write_binary(b'file.txt')
+
+    s = tmpdir.join('src').strpath
+    d = tmpdir.join('dest').strpath
+    result = upload(s, d)
+    assert result.num_processed == 1
+
+    result = delete(s, d)
+    assert result.num_processed == 0
