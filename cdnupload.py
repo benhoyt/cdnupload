@@ -7,54 +7,10 @@ cdnupload is (c) Ben Hoyt 2017 and licensed under multiple licenses: it's
 free for open source websites and non-profits, and there are two well-priced
 commercial licenses available for businesses.
 
-Visit the project's website for more details and for pricing information:
+Visit the project's website for more details and for licensing information:
 
 https://cdnupload.com/
 
-
-TODO:
-* website
-  - CDN picture on homepage
-  - add some numbers (in bold) on how much speedup you might see from using a CDN
-  - smart quotes: ’ “ ”
-
-* documentation: licensing, installation, usage, examples (just GitHub README?), contributing guide
-  - note about using PostCSS and postcss-url or similar if you have static URLs in your CSS
-    See Oyster's gulpfile.js and assetUrlManager.js
-
-* tweak API per Bryan:
-  - have upload() and delete() return a namedtuple:
-    Result(source_key_map, destination_keys, num_scanned, num_processed, num_errors)
-  - get rid of cache_key_map now that upload/delete return Result.source_key_map
-  - upload() and delete() can take str/bytes for destination, meaning FileDestination
-
-* consider changing Destination.keys() to .walk_keys() to avoid confusion with dict/mapping
-
-* put on PyPI
-  - shebang for script
-  - can it be installed in PATH?
-
-* tests: more unicode filename tests: src, dest, s3?
-* tests: real S3 tests
-* tests: does it work on Python 2.6? if not, show error message
-
-* remove include/exclude dirs in walk_files() more efficiently if they match?
-
-* support for parallel s3 uploads (multiprocessing.dummy thread pool?)
-    START:
-    if num_threads > 1:
-        thread_pool = multiprocessing.dummy.Pool(num_threads)
-
-    UPLOAD:
-    if num_threads > 1:
-        thread_pool.apply_async(destination.upload, (key, source, rel_path))
-    else:
-        destination.upload(key, source, rel_path)
-
-    END:
-    if num_threads > 1:
-        logger.info('waiting for parallel uploads to finish')
-        thread_pool.join() # or whatever
 """
 
 from __future__ import print_function
