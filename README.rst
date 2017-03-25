@@ -11,7 +11,7 @@ Documentation and examples
 Introduction
 ============
 
-cdnupload uploads your website’s static files to a CDN with a content-based hash in the filename, giving great caching while avoiding versioning issues. cdnupload is written and maintained by Ben Hoyt: a `software developer <http://benhoyt.com/cv/>`_ and `Python contributor <http://benhoyt.com/writings/scandir/>`_ based just outside New York City.
+cdnupload uploads your website’s static files to a CDN with a content-based hash in the filename, giving great caching while avoiding versioning issues.
 
 
 How it works
@@ -81,3 +81,9 @@ Example usage::
     def load_key_map():
         with open('static_key_map.json') as f:
             return json.load(f)
+
+
+About the author
+----------------
+
+cdnupload is written and maintained by Ben Hoyt: a `software developer <http://benhoyt.com/cv/>`_, `Python contributor <http://benhoyt.com/writings/scandir/>`_, and general all-round computer geek. `Read how and why he wrote cdnupload. <http://TODO>`_
