@@ -116,7 +116,7 @@ def test_keys():
     keys = ['file.txt', 'images/', 'images/bar.jpg', 'images/foo.jpg']
     mock_boto3 = MockBoto3(bucket='buck', prefix='pref/', keys=keys)
     d = S3Destination('s3://buck/pref', _boto3=mock_boto3)
-    assert sorted(d.keys()) == ['file.txt', 'images/bar.jpg', 'images/foo.jpg']
+    assert sorted(d.walk_keys()) == ['file.txt', 'images/bar.jpg', 'images/foo.jpg']
 
 
 def test_upload(tmpdir):

@@ -98,7 +98,7 @@ def test_upload_errors(tmpdir):
     ]
 
     class KeysErrorDestination(FileDestination):
-        def keys(self):
+        def walk_keys(self):
             raise Exception('error')
 
     dk = KeysErrorDestination(tmpdir.join('dest').strpath)

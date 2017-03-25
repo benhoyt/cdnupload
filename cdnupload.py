@@ -277,7 +277,7 @@ class Destination(object):
         """
         raise NotImplementedError
 
-    def keys(self):
+    def walk_keys(self):
         """Yield list of keys currently present on the destination"""
         raise NotImplementedError
 
@@ -305,7 +305,7 @@ class FileDestination(Destination):
     def __str__(self):
         return self.root
 
-    def keys(self):
+    def walk_keys(self):
         for root, dirs, files in os.walk(self.root):
             for file in files:
                 path = os.path.join(root, file)
@@ -403,7 +403,7 @@ class S3Destination(Destination):
     def __str__(self):
         return 's3://{}/{}'.format(self.bucket_name, self.key_prefix)
 
-    def keys(self):
+    def walk_keys(self):
         paginator = self.s3_client.get_paginator('list_objects_v2')
         pages = paginator.paginate(
             Bucket=self.bucket_name,
@@ -477,7 +477,7 @@ def upload(source, destination, force=False, dry_run=False,
         raise SourceError('ERROR scanning source tree', error)
 
     try:
-        destination_keys = set(destination.keys())
+        destination_keys = set(destination.walk_keys())
     except Exception as error:
         raise DestinationError('ERROR listing keys at {}'.format(destination),
                                error)
@@ -565,7 +565,7 @@ def delete(source, destination, force=False, dry_run=False,
     source_keys = set(source_key_map.values())
 
     try:
-        destination_keys = set(destination.keys())
+        destination_keys = set(destination.walk_keys())
     except Exception as error:
         raise DestinationError('ERROR listing keys at {}'.format(destination),
                                error)

@@ -127,7 +127,7 @@ def test_delete_errors(tmpdir):
     ]
 
     class ErrorKeysDestination(FileDestination):
-        def keys(self):
+        def walk_keys(self):
             raise Exception('error')
 
     dk = ErrorKeysDestination(tmpdir.join('dest').strpath)

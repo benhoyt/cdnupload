@@ -22,16 +22,16 @@ def test_file_operations(tmpdir):
     }
 
     d = FileDestination(tmpdir.join('dest').strpath)
-    assert sorted(d.keys()) == []
+    assert sorted(d.walk_keys()) == []
 
     d.upload(keys['file.txt'], s, 'file.txt')
-    assert sorted(d.keys()) == ['file_0beec7b5ea3f0fdb.txt']
+    assert sorted(d.walk_keys()) == ['file_0beec7b5ea3f0fdb.txt']
 
     d.upload(keys['subdir/subfile.txt'], s, 'subdir/subfile.txt')
-    assert sorted(d.keys()) == [
+    assert sorted(d.walk_keys()) == [
         'file_0beec7b5ea3f0fdb.txt',
         'subdir/subfile_0beec7b5ea3f0fdb.txt',
     ]
 
     d.delete(keys['file.txt'])
-    assert sorted(d.keys()) == ['subdir/subfile_0beec7b5ea3f0fdb.txt']
+    assert sorted(d.walk_keys()) == ['subdir/subfile_0beec7b5ea3f0fdb.txt']
