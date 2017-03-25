@@ -16,6 +16,7 @@ https://cdnupload.com/
 from __future__ import print_function
 
 import argparse
+import collections
 import errno
 import fnmatch
 import hashlib
@@ -433,6 +434,16 @@ class S3Destination(Destination):
         self.s3_client.delete_object(Bucket=self.bucket_name, Key=key)
 
 
+# Type returned by top-level upload() and delete() functions
+Result = collections.namedtuple('Result', [
+    'source_key_map',
+    'destination_keys',
+    'num_scanned',
+    'num_processed',
+    'num_errors',
+])
+
+
 def upload(source, destination, force=False, dry_run=False,
            continue_on_errors=False):
     """Upload missing files from source to destination (an instance of a
@@ -464,7 +475,7 @@ def upload(source, destination, force=False, dry_run=False,
         raise SourceError('ERROR scanning source tree', error)
 
     try:
-        dest_keys = set(destination.keys())
+        destination_keys = set(destination.keys())
     except Exception as error:
         raise DestinationError('ERROR listing keys at {}'.format(destination),
                                error)
@@ -480,7 +491,7 @@ def upload(source, destination, force=False, dry_run=False,
                 source,
                 len(source_key_map),
                 destination,
-                len(dest_keys),
+                len(destination_keys),
                 ', options: ' + ', '.join(options) if options else '')
 
     num_scanned = 0
@@ -489,11 +500,11 @@ def upload(source, destination, force=False, dry_run=False,
     for rel_path, key in sorted(source_key_map.items()):
         num_scanned += 1
 
-        if not force and key in dest_keys:
+        if not force and key in destination_keys:
             logger.debug('already uploaded %s, skipping', key)
             continue
 
-        if key in dest_keys:
+        if key in destination_keys:
             verb = 'would force upload' if dry_run else 'force uploading'
         else:
             verb = 'would upload' if dry_run else 'uploading'
@@ -513,7 +524,10 @@ def upload(source, destination, force=False, dry_run=False,
 
     logger.info('finished upload: uploaded %d, skipped %d, errors with %d',
                 num_uploaded, len(source_key_map) - num_uploaded, num_errors)
-    return (num_scanned, num_uploaded, num_errors)
+
+    result = Result(source_key_map, destination_keys,
+                    num_scanned, num_uploaded, num_errors)
+    return result
 
 
 def delete(source, destination, force=False, dry_run=False,
@@ -547,7 +561,7 @@ def delete(source, destination, force=False, dry_run=False,
     source_keys = set(source_key_map.values())
 
     try:
-        dest_keys = sorted(destination.keys())
+        destination_keys = set(destination.keys())
     except Exception as error:
         raise DestinationError('ERROR listing keys at {}'.format(destination),
                                error)
@@ -561,21 +575,21 @@ def delete(source, destination, force=False, dry_run=False,
                 source,
                 len(source_key_map),
                 destination,
-                len(dest_keys),
+                len(destination_keys),
                 ', options: ' + ', '.join(options) if options else '')
 
     if not force:
-        num_to_delete = sum(1 for k in dest_keys if k not in source_keys)
-        if num_to_delete >= len(dest_keys):
+        num_to_delete = sum(1 for k in destination_keys if k not in source_keys)
+        if num_to_delete >= len(destination_keys):
             raise DeleteAllKeysError(
                     "ERROR - would delete all {} destination keys, "
                     "you probably didn't intend this! (use -f/--force or "
-                    "force=True to override)".format(len(dest_keys)))
+                    "force=True to override)".format(len(destination_keys)))
 
     num_scanned = 0
     num_deleted = 0
     num_errors = 0
-    for key in dest_keys:
+    for key in sorted(destination_keys):
         num_scanned += 1
 
         if key in source_keys:
@@ -599,7 +613,10 @@ def delete(source, destination, force=False, dry_run=False,
 
     logger.info('finished delete: deleted %d, errors with %d',
                 num_deleted, num_errors)
-    return (num_scanned, num_deleted, num_errors)
+
+    result = Result(source_key_map, destination_keys,
+                    num_scanned, num_deleted, num_errors)
+    return result
 
 
 def check_license():
@@ -828,11 +845,12 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
     )
     try:
         if args.action == 'upload':
-            _, _, num_errors = upload(**action_args)
+            result = upload(**action_args)
         elif args.action == 'delete':
-            _, _, num_errors = delete(**action_args)
+            result = delete(**action_args)
         else:
             assert 'unexpected action {!r}'.format(args.action)
+        num_errors = result.num_errors
     except Error as error:
         logger.error('%s', error)
         num_errors = 1
@@ -841,7 +859,7 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
         try:
             logger.info('writing key map JSON to {}'.format(args.key_map))
             with open(args.key_map, 'w') as f:
-                json.dump(source.build_key_map(), f, sort_keys=True, indent=4)
+                json.dump(result.source_key_map, f, sort_keys=True, indent=4)
         except Exception as error:
             logger.error('ERROR writing key map file: {}'.format(error))
             num_errors += 1

@@ -28,11 +28,12 @@ def test_upload(tmpdir):
 
     tmpdir.join('dest').mkdir()
 
-    dest_keys = [
-        'file_5436437fa01a7d3e.txt',
-        'images/1_accf102caaa970ce.jpg',
-        'images/2_08fda0244b5397e0.jpg',
-    ]
+    source_key_map = {
+        'file.txt': 'file_5436437fa01a7d3e.txt',
+        'images/1.jpg': 'images/1_accf102caaa970ce.jpg',
+        'images/2.jpg': 'images/2_08fda0244b5397e0.jpg',
+    }
+    destination_keys = set(source_key_map.values())
 
     class CountingDestination(FileDestination):
         def upload(self, key, source, rel_path):
@@ -44,24 +45,32 @@ def test_upload(tmpdir):
     d._uploads = 0
 
     result = upload(s, d, dry_run=True)
-    assert result == (3, 3, 0)
+    assert (result.num_scanned, result.num_processed, result.num_errors) == (3, 3, 0)
     assert d._uploads == 0
     assert list_files(tmpdir.join('dest').strpath) == []
+    assert result.source_key_map == source_key_map
+    assert result.destination_keys == set()
 
     result = upload(s, d)
-    assert result == (3, 3, 0)
+    assert (result.num_scanned, result.num_processed, result.num_errors) == (3, 3, 0)
     assert d._uploads == 3
-    assert list_files(tmpdir.join('dest').strpath) == dest_keys
+    assert list_files(tmpdir.join('dest').strpath) == sorted(destination_keys)
+    assert result.source_key_map == source_key_map
+    assert result.destination_keys == set()
 
     result = upload(s, d)
-    assert result == (3, 0, 0)
+    assert (result.num_scanned, result.num_processed, result.num_errors) == (3, 0, 0)
     assert d._uploads == 3
-    assert list_files(tmpdir.join('dest').strpath) == dest_keys
+    assert list_files(tmpdir.join('dest').strpath) == sorted(destination_keys)
+    assert result.source_key_map == source_key_map
+    assert result.destination_keys == destination_keys
 
     result = upload(s, d, force=True)
-    assert result == (3, 3, 0)
+    assert (result.num_scanned, result.num_processed, result.num_errors) == (3, 3, 0)
     assert d._uploads == 6
-    assert list_files(tmpdir.join('dest').strpath) == dest_keys
+    assert list_files(tmpdir.join('dest').strpath) == sorted(destination_keys)
+    assert result.source_key_map == source_key_map
+    assert result.destination_keys == destination_keys
 
 
 def test_upload_errors(tmpdir):
@@ -83,7 +92,7 @@ def test_upload_errors(tmpdir):
     assert list_files(tmpdir.join('dest').strpath) == []
 
     result = upload(s, du, continue_on_errors=True)
-    assert result == (2, 1, 1)
+    assert (result.num_scanned, result.num_processed, result.num_errors) == (2, 1, 1)
     assert list_files(tmpdir.join('dest').strpath) == [
         'file2_5436437fa01a7d3e.txt',
     ]

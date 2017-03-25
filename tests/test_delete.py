@@ -28,11 +28,12 @@ def test_delete(tmpdir):
 
     tmpdir.join('dest').mkdir()
 
-    dest_keys = [
-        'file_5436437fa01a7d3e.txt',
-        'images/1_accf102caaa970ce.jpg',
-        'images/2_08fda0244b5397e0.jpg',
-    ]
+    source_key_map = {
+        'file.txt': 'file_5436437fa01a7d3e.txt',
+        'images/1.jpg': 'images/1_accf102caaa970ce.jpg',
+        'images/2.jpg': 'images/2_08fda0244b5397e0.jpg',
+    }
+    destination_keys = set(source_key_map.values())
 
     class CountingDestination(FileDestination):
         def delete(self, key):
@@ -44,28 +45,40 @@ def test_delete(tmpdir):
     d._deletes = 0
 
     result = upload(s, d)
-    assert result == (3, 3, 0)
+    assert (result.num_scanned, result.num_processed, result.num_errors) == (3, 3, 0)
+    assert result.source_key_map == source_key_map
+    assert result.destination_keys == set()
 
     result = delete(s, d)
-    assert result == (3, 0, 0)
-    assert list_files(tmpdir.join('dest').strpath) == dest_keys
+    assert (result.num_scanned, result.num_processed, result.num_errors) == (3, 0, 0)
+    assert list_files(tmpdir.join('dest').strpath) == sorted(destination_keys)
+    assert result.source_key_map == source_key_map
+    assert result.destination_keys == destination_keys
 
     tmpdir.join('src', 'file.txt').remove()
+    del source_key_map['file.txt']
+
     result = delete(s, d, dry_run=True)
     assert d._deletes == 0
-    assert result == (3, 1, 0)
-    assert list_files(tmpdir.join('dest').strpath) == dest_keys
+    assert (result.num_scanned, result.num_processed, result.num_errors) == (3, 1, 0)
+    assert list_files(tmpdir.join('dest').strpath) == sorted(destination_keys)
+    assert result.source_key_map == source_key_map
+    assert result.destination_keys == destination_keys
 
     result = delete(s, d)
     assert d._deletes == 1
-    assert result == (3, 1, 0)
+    assert (result.num_scanned, result.num_processed, result.num_errors) == (3, 1, 0)
     assert list_files(tmpdir.join('dest').strpath) == [
         'images/1_accf102caaa970ce.jpg',
         'images/2_08fda0244b5397e0.jpg',
     ]
+    assert result.source_key_map == source_key_map
+    assert result.destination_keys == destination_keys
 
+    destination_keys.remove('file_5436437fa01a7d3e.txt')
     tmpdir.join('src', 'images', '1.jpg').remove()
     tmpdir.join('src', 'images', '2.jpg').remove()
+    source_key_map.clear()
 
     with pytest.raises(DeleteAllKeysError):
         delete(s, d)
@@ -73,8 +86,10 @@ def test_delete(tmpdir):
 
     result = delete(s, d, force=True)
     assert d._deletes == 3
-    assert result == (2, 2, 0)
+    assert (result.num_scanned, result.num_processed, result.num_errors) == (2, 2, 0)
     assert list_files(tmpdir.join('dest').strpath) == []
+    assert result.source_key_map == source_key_map
+    assert result.destination_keys == destination_keys
 
 
 def test_delete_errors(tmpdir):
@@ -105,7 +120,7 @@ def test_delete_errors(tmpdir):
     ]
 
     result = delete(s, dd, continue_on_errors=True)
-    assert result == (3, 1, 1)
+    assert (result.num_scanned, result.num_processed, result.num_errors) == (3, 1, 1)
     assert list_files(tmpdir.join('dest').strpath) == [
         'file1_5436437fa01a7d3e.txt',
         'file3_5436437fa01a7d3e.txt',
