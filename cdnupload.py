@@ -30,24 +30,6 @@ TODO:
 
 * consider changing Destination.keys() to .walk_keys() to avoid confusion with dict/mapping
 
-* add a "agree to license" prompt the first time, and an --agree-to-license or --no-prompt
-  command line option to suppress
-
-        cdnupload is licensed under multiple licenses -- for more details, see:
-        https://cdnupload.com/#licensing
-
-          open      free for websites that are open source (AGPLv3 license)
-          single    single website commercial license with support
-          multi     multi-website commercial license with support
-
-        If you're using cdnupload for an open source website or a non-profit, type
-        "open". If you've paid for a single website or multi-website license, type
-        "single" or "multi".
-
-        You'll only have to type this once (it's saved to ~/.cdnupload/license).
-
-        YES, I AGREE to the terms of the license [open, single, multi]: 
-
 * put on PyPI
   - shebang for script
   - can it be installed in PATH?
@@ -97,8 +79,14 @@ except ImportError:
 __version__ = '1.0.0'
 
 DEFAULT_HASH_LENGTH = 16
+LICENSES = ['open', 'single', 'multi']
 
 logger = logging.getLogger('cdnupload')
+
+
+IS_PY2 = sys.version_info < (3, 0)
+if IS_PY2:
+    input = raw_input
 
 
 class Error(Exception):
@@ -658,6 +646,63 @@ def delete(source, destination, force=False, dry_run=False,
     return (num_scanned, num_deleted, num_errors)
 
 
+def check_license():
+    """Ask user to agree to one of the licenses."""
+
+    license_path = '~/.cdnupload/license'
+    license_full_path = os.path.expanduser(license_path)
+    try:
+        with open(license_full_path) as f:
+            license = f.read().strip().lower()
+            if license in LICENSES:
+                return
+    except OSError:
+        pass
+
+    prompt = """
+cdnupload is licensed under multiple licenses -- for more details, see:
+
+https://cdnupload.com/#licensing
+
+license types:
+  open      free for websites that are open source (AGPLv3 license)
+  single    single website commercial license with support
+  multi     multi-website commercial license with support
+
+If you're using cdnupload for an open source website or a non-profit, type
+"open". If you've paid for a single website or multi-website license, type
+"single" or "multi".
+
+You'll only have to type this once (it's saved to {license_path}).
+
+YES, I AGREE to the terms of the license [{licenses}]:
+""".format(license_path=license_path, licenses=', '.join(LICENSES))
+    prompt = prompt.strip() + ' '
+
+    while True:
+        license = input(prompt).strip().lower()
+        if license in LICENSES:
+            break
+        prompt = 'Please enter a valid license [{licenses}]: '.format(
+                licenses=', '.join(LICENSES))
+
+    try:
+        license_dir = os.path.dirname(license_full_path)
+        if not os.path.exists(license_dir):
+            os.mkdir(license_dir)
+        with open(license_full_path, 'w') as f:
+            f.write(license)
+    except OSError as error:
+        message = """
+ERROR writing license to {license_full_path}:
+{error}
+
+You can use the --license={license} command line option to override
+""".format(license_full_path=license_full_path, error=error, license=license)
+        print(message.rstrip(), file=sys.stderr)
+        sys.exit(1)
+
+
 def main(args=None):
     """Command line endpoint for uploading/deleting. If args not specified,
     the sys.argv command line arguments are used. Run "cdnupload.py -h" for
@@ -728,8 +773,16 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
     less_common.add_argument('--ignore-walk-errors', action='store_true',
                              help='ignore errors when walking source tree, '
                                   'except for error on root directory')
+    less_common.add_argument('--license', choices=LICENSES,
+                             help="override \"agree to license\" prompt shown "
+                                  "on first run; only use if you've paid or agreed "
+                                  "to the open license (see "
+                                  "https://cdnupload.com/#licensing for more info)")
 
     args = parser.parse_args()
+
+    if args.license is None:
+        check_license()
 
     log_levels = {
         'verbose': logging.DEBUG,
