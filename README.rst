@@ -13,9 +13,11 @@ Introduction
 
 cdnupload uploads your website’s static files to a CDN with a content-based hash in the filename, giving great caching while avoiding versioning issues.
 
+Read this documentation online for best results: https://cdnupload.com/docs
+
 
 Multi-licensing
----------------
+===============
 
 cdnupload is © Ben Hoyt 2017 and licensed under multiple licenses (`read why here <https://cdnupload.com/#licensing>`_). It’s free for open source websites and non-profits, and there are two well-priced commercial licenses available for businesses. The three license options are:
 
@@ -29,7 +31,7 @@ If your company’s requirements don’t fit into any of the above, or you want 
 
 
 How it works
-------------
+============
 
 cdnupload is primarily a **command-line tool** that uploads the static files to a CDN (well, really the CDN's origin server). It optionally generates a JSON "key mapping" that maps filename to destination key. The destination key is the filename with a hash in it based on the file's contents. This allows you to set up the CDN to cache your static files aggresively, with an essentially infinite expiry time (max age).
 
@@ -65,7 +67,7 @@ You'll also need to **integrate with your web server** so that your web applicat
 
 
 Command-line usage
-------------------
+==================
 
 The basic format of the cdnupload command line is::
 
@@ -74,12 +76,12 @@ The basic format of the cdnupload command line is::
 Where ``options`` are short or long (``-s`` or ``--long``) command line options. You can mix these freely with the positional arguments if you want.
 
 Source
-~~~~~~
+------
 
 ``source`` is the source directory of your static files, for example ``/website/static``. Use the optional ``--include`` and ``--exclude`` arguments, and other arguments described below, to control exactly which files are uploaded.
 
 Destination and dest-args
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 ``destination`` is the destination directory to upload to, or an ``s3://static-bucket/key/prefix`` path for upload to Amazon S3.
 
@@ -94,7 +96,7 @@ For more details about custom ``Destination`` subclasses, see below (TODO).
     cdnupload source s3:// --action=dest-help
 
 Optional arguments
-~~~~~~~~~~~~~~~~~~
+------------------
 
 The most common optional arguments are:
 
@@ -140,7 +142,7 @@ TODO
 
 
 Web server integration
-----------------------
+======================
 
 For example::
 
@@ -163,20 +165,20 @@ There are various ways to integrate cdnupload, particularly in Python where you 
 
 
 Static URLs in CSS
-------------------
+==================
 
 TODO
 
 
 Python API
-----------
+==========
 
 TODO
 
 
 
 Examples
---------
+========
 
 Example usage::
 
@@ -204,6 +206,6 @@ Example usage::
 
 
 About the author
-----------------
+================
 
 cdnupload is written and maintained by Ben Hoyt: a `software developer <http://benhoyt.com/cv/>`_, `Python contributor <http://benhoyt.com/writings/scandir/>`_, and general all-round computer geek. `Read how and why he wrote cdnupload. <http://TODO>`_
