@@ -33,7 +33,7 @@ If your company’s requirements don’t fit into any of the above, or you want 
 How it works
 ============
 
-cdnupload is primarily a **command-line tool** that uploads the static files to a CDN (well, really the CDN's origin server). It optionally generates a JSON "key mapping" that maps filename to destination key. The destination key is the filename with a hash in it based on the file's contents. This allows you to set up the CDN to cache your static files aggresively, with an essentially infinite expiry time (max age).
+cdnupload is primarily a **command-line tool** that uploads your site's static files to a CDN (well, really the CDN's origin server). It optionally generates a JSON "key mapping" that maps filename to destination key. The destination key is the filename with a hash in it based on the file's contents. This allows you to set up the CDN to cache your static files aggresively, with an essentially infinite expiry time (max age).
 
 (For a brief introduction to what a CDN is and why you might want to use one, `see the CDN section on the cdnupload homepage. <https://cdnupload.com/#cdn>`_)
 
@@ -95,50 +95,68 @@ For more details about custom ``Destination`` subclasses, see below (TODO).
 
     cdnupload source s3:// --action=dest-help
 
-Optional arguments
-------------------
+Common arguments
+----------------
 
-The most common optional arguments are:
-
-  -h, --help            Show help about these command-line options and exit.
+  -h, --help
+        Show help about these command-line options and exit.
 
   -a ACTION, --action ACTION
-                        Specify action to perform (the default is to upload):
+        Specify action to perform (the default is to upload):
 
-                        * ``upload``: Upload files that are not present at the destination from the source to the destination.
-                        * ``delete``: Delete unused files at the destination (files no longer present at the source). Be careful with deleting, and use ``--dry-run`` to test first!
-                        * ``dest-help``: Show help and available destination arguments for the given Destination class.
+        * ``upload``: Upload files that are not present at the destination from the source to the destination.
+        * ``delete``: Delete unused files at the destination (files no longer present at the source). Be careful with deleting, and use ``--dry-run`` to test first!
+        * ``dest-help``: Show help and available destination arguments for the given Destination class.
 
-  -d, --dry-run         Show what the script would upload or delete instead of actually doing it. This option is recommended before running with ``--action=delete``, to ensure you're not deleting more than you expect.
+  -d, --dry-run
+        Show what the script would upload or delete instead of actually doing it. This option is recommended before running with ``--action=delete``, to ensure you're not deleting more than you expect.
 
   -e PATTERN, --exclude PATTERN
-                        Exclude source files if their relative path matches the given pattern (according to globbing rules as per Python's ``fnmatch``). For example, ``*.txt`` to include all text files, or ``__pycache__/*`` to exclude everything under the *pycache* directory. This option may be specified multiple times to exclude more than one pattern.
+        Exclude source files if their relative path matches the given pattern (according to globbing rules as per Python's ``fnmatch``). For example, ``*.txt`` to include all text files, or ``__pycache__/*`` to exclude everything under the *pycache* directory. This option may be specified multiple times to exclude more than one pattern.
 
-                        Excludes take precedence over includes, so you can do ``--include=*.txt`` but then exclude a specific text file with ``--exclude=docs/README.txt``.
+        Excludes take precedence over includes, so you can do ``--include=*.txt`` but then exclude a specific text file with ``--exclude=docs/README.txt``.
 
-  -f, --force           If uploading, force all files to be uploaded even if destination files already exist (useful, for example, when updating headers on Amazon S3).
+  -f, --force
+        If uploading, force all files to be uploaded even if destination files already exist (useful, for example, when updating headers on Amazon S3).
 
-                        If deleting, allow the delete to occur even if all files on the destination would be deleted (the default is to prevent that to avoid ``rm -rf`` style mistakes).
+        If deleting, allow the delete to occur even if all files on the destination would be deleted (the default is to prevent that to avoid ``rm -rf`` style mistakes).
 
   -i PATTERN, --include PATTERN
-                        If specified, only include source files if their relative path matches the given pattern (according to globbing rules as per Python's ``fnmatch``). For example, ``*.png`` to include all PNG images, or ``images/*`` to include everything under the *images* directory. This option may be specified multiple times to include more than one pattern.
+        If specified, only include source files if their relative path matches the given pattern (according to globbing rules as per Python's ``fnmatch``). For example, ``*.png`` to include all PNG images, or ``images/*`` to include everything under the *images* directory. This option may be specified multiple times to include more than one pattern.
 
-                        Excludes take precedence over includes, so you can do ``--include=*.txt`` but then exclude a specific text file with ``--exclude=docs/README.txt``.
+        Excludes take precedence over includes, so you can do ``--include=*.txt`` but then exclude a specific text file with ``--exclude=docs/README.txt``.
 
   -k FILENAME, --key-map FILENAME
-                        Write key mapping to given file as JSON (but only
-                        after successful upload or delete). This file can be used by your web server to produce full CDN URLs for your static files.
+        Write key mapping to given file as JSON (but only
+        after successful upload or delete). This file can be used by your web server to produce full CDN URLs for your static files.
 
-                        Keys in the JSON object are the original paths (relative to the source root), and values in the object are the destination paths (relative to the destination root). For example, the JSON might look like: ``TODO``
+        Keys in the JSON object are the original paths (relative to the source root), and values in the object are the destination paths (relative to the destination root). For example, the JSON might look like: ``TODO``
 
   -l LEVEL, --log-level LEVEL
-                        set logging level
+        Set the verbosity of the log output. The level must be one of:
 
-  -v, --version         show program's version number and exit
+        * ``verbose``: Most verbose output. Log even files that the script would skip uploading.
+        * ``default``: Default level of output. Log when the script starts, finishes, and actual uploads and deletes that occur (or would occur if doing a ``--dry-run``).
+        * ``quiet``: Quieter than the default. Only log when and if the script actually uploads or deletes files (no start or finish logs). If there's nothing to do, don't log anything.
+        * ``errors``: Only log errors.
+        * ``off``: Turn all logging off completely.
 
-Less commonly-used arguments are:
+  -v, --version
+        Show cdnupload's version number and exit.
 
-TODO
+Less common arguments
+---------------------
+
+  --continue-on-errors
+        Continue after upload or delete errors. The script will still log the errors, and it will also return a nonzero exit code if there is at least one error. The default is to stop on the first error.
+  --dot-names
+        Include source files and directories that start with ``.`` (dot). The default is to skip any files or directories that start with a dot.
+  --follow-symlinks
+        Follow symbolic links to directories when walking the source tree. The default is to skip any symbolic links to directories.
+  --hash-length N
+        Set the number of hexadecimal characters of the content hash to use for destination key. The default is 16.
+  --ignore-walk-errors
+        Ignore errors when walking the source tree (for example, permissions errors on a directory), except for an error when listing the source root directory.
 
 
 Web server integration
