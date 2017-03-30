@@ -30,8 +30,8 @@ cdnupload is © Ben Hoyt 2017 and licensed under multiple licenses (`read why he
 If your company’s requirements don’t fit into any of the above, or you want to discuss a custom license, please contact us at `info@cdnupload.com <mailto:info@cdnupload.com>`_.
 
 
-How it works
-============
+Overview
+========
 
 cdnupload is primarily a **command-line tool** that uploads your site's static files to a CDN (well, really the CDN's origin server). It optionally generates a JSON "key mapping" that maps filename to destination key. The destination key is the filename with a hash in it based on the file's contents. This allows you to set up the CDN to cache your static files aggresively, with an essentially infinite expiry time (max age).
 
