@@ -3,9 +3,9 @@
 cdnupload
 =========
 
---------------------------
-Documentation and examples
---------------------------
+-------------
+Documentation
+-------------
 
 
 Introduction
@@ -127,10 +127,9 @@ Common arguments
         Excludes take precedence over includes, so you can do ``--include=*.txt`` but then exclude a specific text file with ``--exclude=docs/README.txt``.
 
   -k FILENAME, --key-map FILENAME
-        Write key mapping to given file as JSON (but only
-        after successful upload or delete). This file can be used by your web server to produce full CDN URLs for your static files.
+        Write key mapping to given file as JSON (but only after successful upload or delete). This file can be used by your web server to produce full CDN URLs for your static files.
 
-        Keys in the JSON object are the original paths (relative to the source root), and values in the object are the destination paths (relative to the destination root). For example, the JSON might look like: ``TODO``
+        Keys in the JSON object are the original paths (relative to the source root), and values in the object are the destination paths (relative to the destination root). For example, the JSON might look like ``{"script.js": "script_0beec7b5ea3f0fdb.js", ...}``.
 
   -l LEVEL, --log-level LEVEL
         Set the verbosity of the log output. The level must be one of:
@@ -162,24 +161,41 @@ Less common arguments
 Web server integration
 ======================
 
-For example::
+In addition to using the command line script to upload files, you'll need to modify your web server so it knows how to generate the static URLs including the content-based hash in the filename.
 
-    import json, settings
+The recommended way to do this is to load the key mapping JSON, which is written out by the ``--key-map`` command line argument when you upload your statics. You can load this into a key-value dictionary when your server starts up, and then generating a static URL is as simple as looking up the relative path of a static file in this dictionary.
+
+Even though the keys in the JSON are relative file paths, they're normalized to always use ``/`` (forward slash) as the directory separator, even on Windows. This is so consumers of the mapping can look up files directly in the mapping with a consistent path separator.
+
+Below is a simple example of loading the key mapping in your web server startup (call ``init_server()`` on startup) and then defining a function to generate full static URLs for use in your HTML templates. This example is written in Python, but you can use any language that can parse JSON and look something up in a map::
+
+    import json
+    import settings
 
     def init_server():
-        """Load the key map JSON written by cdnupload --key-map"""
+        settings.cdn_base_url = 'https://mycdn.com/'
         with open('statics.json') as f:
             settings.statics = json.load(f)
 
     def static_url(rel_path):
         """Convert relative static path to full static URL (including hash)"""
-        return '//mycdn.com/' + settings.statics[rel_path]
+        return settings.cdn_base_url + settings.statics[rel_path]
 
-And then in your HTML templates, just reference a static file using the ``static_url`` filter (Jinja2 template example)::
+And then in your HTML templates, just reference a static file using the ``static_url`` function (referenced here as a Jinja2 template filter)::
 
-    {{ ' style.css'|static_url }}
+    <link rel="stylesheet" href="{{ 'style.css'|static_url }}">
 
-There are various ways to integrate cdnupload, particularly in Python where you can ``import cdnupload`` and build the key map directly if you want. Read on for full details.
+If your web server is in fact written in Python, you can also ``import cdnupload`` directly and use ``cdnupload.FileSource`` with the same parameters as the upload command line. This will build the key mapping at server startup time, and may simplify the deployment process a little::
+
+    import cdnupload
+    import settings
+
+    def init_server():
+        settings.cdn_base_url = 'https://mycdn.com/'
+        source = cdnupload.FileSource(settings.static_dir)
+        settings.static_paths = source.build_key_map()
+
+If you have huge numbers of static files, this is not recommended, as it does have to re-hash all the files when the server starts up. So for larger sites it's best to produce the key map JSON and copy that to your app servers as part of your deployment process.
 
 
 Static URLs in CSS
@@ -192,35 +208,6 @@ Python API
 ==========
 
 TODO
-
-
-
-Examples
-========
-
-Example usage::
-
-    _keys_by_path = {}
-
-    def init_server():
-        global _keys_by_path
-        _keys_by_path = build_key_map('static/')
-        # OR
-        _keys_by_path = load_key_map()
-
-        def static_url(rel_path):
-            return settings.static_prefix + _keys_by_path[rel_path]
-        flask_env.filters['static_url'] = static_url
-
-
-    def save_key_map():
-        with open('static_key_map.json', 'w') as f:
-            json.dump(f, build_key_map('static/'), sort_keys=True, indent=4)
-
-
-    def load_key_map():
-        with open('static_key_map.json') as f:
-            return json.load(f)
 
 
 About the author
