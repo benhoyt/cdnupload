@@ -623,8 +623,8 @@ def delete(source, destination, force=False, dry_run=False,
     return result
 
 
-def check_license():
-    """Ask user to agree to one of the licenses."""
+def is_license_valid():
+    """Ask user to agree to one of the licenses, return True if they've accepted."""
 
     license_path = '~/.cdnupload/license'
     license_full_path = os.path.expanduser(license_path)
@@ -632,7 +632,7 @@ def check_license():
         with open(license_full_path) as f:
             license = f.read().strip().lower()
             if license in LICENSES:
-                return
+                return True
     except OSError:
         pass
 
@@ -677,7 +677,9 @@ ERROR writing license to {license_full_path}:
 You can use the --license={license} command line option to override
 """.format(license_full_path=license_full_path, error=error, license=license)
         print(message.rstrip(), file=sys.stderr)
-        sys.exit(1)
+        return False
+
+    return True
 
 
 def main(args=None):
@@ -758,8 +760,8 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
 
     args = parser.parse_args()
 
-    if args.license is None:
-        check_license()
+    if args.license is None and not is_license_valid():
+        return 1
 
     log_levels = {
         'verbose': logging.DEBUG,
@@ -806,7 +808,7 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
         print(args_wrapped)
         print()
         print(inspect.getdoc(destination_class))
-        sys.exit(0)
+        return 0
 
     source = FileSource(
         args.source,
@@ -838,7 +840,7 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
     except Exception as error:
         logger.error('ERROR creating %s instance: %s',
                      destination_class.__name__, error)
-        sys.exit(1)
+        return 1
 
     action_args = dict(
         source=source,
@@ -868,8 +870,8 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
             logger.error('ERROR writing key map file: {}'.format(error))
             num_errors += 1
 
-    sys.exit(1 if num_errors else 0)
+    return 1 if num_errors else 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

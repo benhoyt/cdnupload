@@ -36,6 +36,7 @@ setup(
 # TODO: requires boto3 / optional
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
+    entry_points={'console_scripts': ['cdnupload = cdnupload.main']},
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
@@ -50,5 +51,5 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
 #TODO        'Topic :: Multimedia :: Graphics',
-    ]
+    ],
 )
