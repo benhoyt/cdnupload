@@ -33,6 +33,9 @@ except ImportError:
     from urlparse import urlparse
 
 
+__all__ = ['SourceError', 'DestinationError', 'FileSource', 'Destination',
+           'FileDestination', 'S3Destination', 'upload', 'delete']
+
 __version__ = '1.0.0'
 
 DEFAULT_HASH_LENGTH = 16
