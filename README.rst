@@ -15,8 +15,6 @@ cdnupload uploads your website’s static files to a CDN with a content-based ha
 
 Read this documentation online for best results: https://cdnupload.com/docs
 
-TODO: installation, boto3, etc
-
 
 Multi-licensing
 ===============
@@ -30,6 +28,24 @@ cdnupload is © Ben Hoyt 2017 and licensed under multiple licenses (`read why he
 3. **Multi-website:** this license is a commercial license for using cdnupload on up to 10 websites. `See pricing, more details, and the full text of the multi-website license. <https://cdnupload.com/multi>`_
 
 If your company’s requirements don’t fit into any of the above, or you want to discuss a custom license, please contact us at `info@cdnupload.com <mailto:info@cdnupload.com>`_.
+
+
+Installation
+============
+
+cdnupload is a Python package which runs under Python 2.7 and Python 3.4+. To install it as a command-line script and in the global Python environment, simply type::
+
+    pip install cdnupload
+
+If you are using a specific version of Python or want to install it in a virtual Python environment, activate the virtual environment and run the same ``pip install`` command.
+
+Additionally, if you'll be using Amazon S3 as a destination (``S3Destination``), you'll need to install the ``boto3`` package to interact with Amazon S3. To install boto3, type the following (in your virtual environment if you want)::
+
+    pip install boto3
+
+After cdnupload is installed, you can run the command-line script simply by typing ``cdnupload``. Or, if you need to run it against a specific Python interpreter, run the script as a module with ``python -m``, like so::
+
+    /path/to/my/python -m cdnupload
 
 
 Overview
