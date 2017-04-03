@@ -15,6 +15,8 @@ cdnupload uploads your website’s static files to a CDN with a content-based ha
 
 Read this documentation online for best results: https://cdnupload.com/docs
 
+TODO: installation, boto3, etc
+
 
 Multi-licensing
 ===============
@@ -201,11 +203,41 @@ If you have huge numbers of static files, this is not recommended, as it does ha
 Static URLs in CSS
 ==================
 
-TODO
+If you reference static files in your CSS (for example, background images with ``url(...)`` expressions), you'll need to either remove them from your CSS and generate them in an inline ``<style>`` section at the top of your HTML, or use a post-processor script on your CSS to change the URLs from relative to full hashed URLs.
+
+For small sites, it may be simpler to just extract them from your CSS. For example, for a CSS rule like this::
+
+    body.home {
+        font-family: Verdana;
+        font-size: 10px;
+        background-image: url(/static/images/hero.jpg);
+    }
+
+You would remove just the ``background-image`` line and put it in an inline style block in the ``<head>`` section of relevant pages, like this::
+
+    <head>
+        <!-- other head elements; link to the stylesheet above -->
+        <style type="text/css">
+            body.home {
+                background-image: url({{ 'images/hero.jpg'|static_url }});
+            }
+        </style>
+    </head>
+
+However, for larger-scale sites where the CSS references a lot of static images, this quickly becomes hard to manage. In that case, you'll want to use a tool like `PostCSS <http://postcss.org/>`_ to rewrite static URLs in your CSS to cdnupload URLs via the key mapping. There's a PostCSS plugin called `postcss-url <https://github.com/postcss/postcss-url>`_ that you can use to rewrite URLs with a custom transform function.
+
+The CSS rewriting should be integrated into your build or deployment process, as the PostCSS rule will need access to the JSON key mapping that the uploader wrote out.
 
 
 Python API
 ==========
+
+cdnupload is a Python command-line script, but it's also a Python module you can import and extend if you need to customize it or hook into advanced features. It works on both Python 2.7 and Python 3.4+.
+
+Custom destination
+------------------
+
+The most likely reason you'll need to extend cdnupload is to write a custom ``Destination`` class if the built-in file or Amazon S3 destinations don't work for you. For example, if you 
 
 TODO
 
