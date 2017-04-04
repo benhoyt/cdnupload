@@ -302,7 +302,19 @@ TODO
 Contributing
 ============
 
-TODO
+Even though cdnupload is multi-licensed, the source code is open, and contributions are welcomed.
+
+If you find a bug in cdnupload, please open an issue with the following information:
+
+* Full error messages or tracebacks
+* The cdnupload version, Python version, and operating system type and version
+* Steps or a test case that reproduces the issue (ideally)
+
+If you have a feature request or suggestion, open an issue and we'll discuss!
+
+You're welcome to submit a pull request as well, but it's usually best to open an issue first, so we can discuss the changes before you put a lot of time into the fix or feature.
+
+See `CONTRIBUTING.md <https://github.com/benhoyt/cdnupload/blob/master/CONTRIBUTING.md>`_ in the cdnupload source tree for some legal requirements and more information.
 
 
 About the author
