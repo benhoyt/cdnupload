@@ -33,13 +33,13 @@ If your company’s requirements don’t fit into any of the above, or you want 
 Installation
 ============
 
-cdnupload is a Python package which runs under Python 2.7 and Python 3.4+. To install it as a command-line script and in the global Python environment, simply type::
+cdnupload is a Python package which runs under Python 3.4+ as well as Python 2.7. To install it as a command-line script and in the global Python environment, simply type::
 
     pip install cdnupload
 
-If you are using a specific version of Python or want to install it in a virtual Python environment, activate the virtual environment and run the same ``pip install`` command.
+If you are using a specific version of Python or want to install it in a virtual Python environment, activate the virtual environment first, then run the ``pip install`` command.
 
-Additionally, if you'll be using Amazon S3 as a destination (``S3Destination``), you'll need to install the ``boto3`` package to interact with Amazon S3. To install boto3, type the following (in your virtual environment if you want)::
+Additionally, if you'll be using Amazon S3 as a destination, you'll need to install the ``boto3`` package to interact with Amazon S3. To install boto3, type the following (in your virtual environment if you're using one)::
 
     pip install boto3
 
@@ -103,11 +103,11 @@ Destination and dest-args
 
 ``destination`` is the destination directory to upload to, or an ``s3://static-bucket/key/prefix`` path for upload to Amazon S3.
 
-You can also specify a custom scheme for the destination (the ``scheme://`` part of the URL), and cdnupload will try to import a module named ``cdnupload_scheme`` (which must be on the ``PYTHONPATH``) and use that module's ``Destination`` class along with the ``dest_args`` to create the destination instance.
+You can also specify a custom scheme for the destination (the ``scheme://`` part of the URL), and cdnupload will try to import a module named ``cdnupload_scheme`` (which must be on the PYTHONPATH) and use that module's ``Destination`` class along with the ``dest_args`` to create the destination instance.
 
 For example, if you create your own uploader for Google Cloud Storage, you might use the prefix ``gcs://`` and name your module ``cdnupload_gcs``. Then you could use ``gcs://my/path`` as a destination, and cdnupload would instantiate the destination instance using ``cdnupload_gcs.Destination('gcs://bucket', **dest_args)``.
 
-For more details about custom ``Destination`` subclasses, see below (TODO).
+See the `custom destination`_ section for more details about custom ``Destination`` subclasses.
 
 ``dest_args`` are destination-specific arguments passed as keyword arguments to the ``Destination`` class (for example, for ``s3://`` destinations, useful dest args are ``max_age=86400`` or ``region_name=s3_region``). For help on destination-specific args, use the ``dest-help`` action. For example, to show S3-specific destination args::
 
@@ -253,7 +253,54 @@ cdnupload is a Python command-line script, but it's also a Python module you can
 Custom destination
 ------------------
 
-The most likely reason you'll need to extend cdnupload is to write a custom ``Destination`` class if the built-in file or Amazon S3 destinations don't work for you. For example, if you 
+The most likely reason you'll need to extend cdnupload is to write a custom ``Destination`` subclass (if the built-in file or Amazon S3 destinations don't work for you).
+
+For example, if you're using a CDN that connects to an origin server called "My Origin", you might write a custom subclass for uploading to your origin. You'll need to subclass ``cdnupload.Destination`` and implement an initalizer as well as the ``__str__``, ``walk_keys``, ``upload``, and ``delete`` methods::
+
+    import cdnupload
+    import myorigin
+
+    class Destination(cdnupload.Destination):
+        def __init__(self, url, foo='FOO', bar=None):
+            """Initialize destination instance with given "My Origin" URL
+            (which should be in form my://server/path).
+            """
+            self.url = url
+            self.conn = myorigin.Connection(url, foo=foo, bar=bar)
+
+        def __str__(self):
+            """Return a human-readable string for this destination."""
+            return self.url
+
+        def walk_keys(self):
+            """Yield keys (files) that are currently on the destination."""
+            for file in self.conn.get_files():
+                yield file.name
+
+        def upload(self, key, source, rel_path):
+            """Upload a single file from source at rel_path to destination
+            at given key. Normally this function will use the with statement
+            "with source.open(rel_path)" to open the source file object.
+            """
+            with source.open(rel_path) as source_file:
+                self.conn.upload_file_obj(source_file, key)
+
+        def delete(self, key):
+            """Delete a single file on destination at given key."""
+            self.conn.delete_file(key)
+
+To use this custom destination, save your custom code to ``cdnupload_my.py`` and ensure the file is somewhere on your PYTHONPATH. Then if you run the cdnupload command-line tool with a destination starting with scheme ``my://``, it will automatically import ``cdnupload_my`` and look for a class called ``Destination``, passing the ``my://server/path`` URL and any additional destination arguments to your initializer.
+
+Note that when the command-line tool passes additional dest_args to a custom destination, it always passes them as strings (or a list of strings if a dest arg is specified more than once). So if you need an integer or other type, you'll need to convert it in your ``__init__`` method.
+
+Custom source
+-------------
+
+TODO
+
+
+Contributing
+============
 
 TODO
 
