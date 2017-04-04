@@ -27,21 +27,25 @@ setup(
     author='Ben Hoyt',
     author_email='benhoyt@gmail.com',
     url='https://cdnupload.com/',
-    license='TODO',
+    license='Multi-licensed: AGPLv3 and Commercial',
     description='Upload static files from given source directory to '
                 'destination directory or Amazon S3 bucket, with content-'
                 'based hash in filenames for versioning.',
     long_description=long_description,
     py_modules=['cdnupload'],
-# TODO: requires boto3 / optional
+    extras_require={
+        's3': ['boto3'],
+    },
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
-    entry_points={'console_scripts': ['cdnupload = cdnupload.main']},
+    entry_points={
+        'console_scripts': ['cdnupload = cdnupload.main'],
+    },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Operating System :: OS Independent',
-#TODO        'License :: OSI Approved :: MIT License',
+        'License :: Other/Proprietary License',
         'Programming Language :: Python',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
@@ -50,6 +54,6 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
-#TODO        'Topic :: Multimedia :: Graphics',
+        'Topic :: Internet :: WWW/HTTP',
     ],
 )

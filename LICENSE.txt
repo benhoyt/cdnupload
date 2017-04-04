@@ -4,4 +4,4 @@ free for open source websites and non-profits, and there are two well-priced
 commercial licenses available for businesses. See the "Multi-licensing"
 section in README.rst for details:
 
-https://github.com/benhoyt/cdnupload/blob/master/README.rst#multi-licensing
+https://cdnupload.com/docs#multi-licensing
