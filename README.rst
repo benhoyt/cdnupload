@@ -253,7 +253,7 @@ cdnupload is a Python command-line script, but it's also a Python module you can
 Custom destination
 ------------------
 
-The most likely reason you'll need to extend cdnupload is to write a custom ``Destination`` subclass (if the built-in file or Amazon S3 destinations don't work for you). TODO: add something about using FileSource with an external copy tool.
+The most likely reason you'll need to extend cdnupload is to write a custom ``Destination`` subclass (if the built-in file or Amazon S3 destinations don't work for you).
 
 For example, if you're using a CDN that connects to an origin server called "My Origin", you might write a custom subclass for uploading to your origin. You'll need to subclass ``cdnupload.Destination`` and implement an initalizer as well as the ``__str__``, ``walk_keys``, ``upload``, and ``delete`` methods::
 
