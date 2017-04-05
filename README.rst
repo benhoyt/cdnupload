@@ -248,12 +248,47 @@ The CSS rewriting should be integrated into your build or deployment process, as
 Python API
 ==========
 
-cdnupload is a Python command-line script, but it's also a Python module you can import and extend if you need to customize it or hook into advanced features. It works on both Python 2.7 and Python 3.4+.
+cdnupload is a Python command-line script, but it's also a Python module you can import and extend if you need to customize it or hook into advanced features. It works on both Python 3.4+ and Python 2.7.
+
+Upload and delete
+-----------------
+
+The top-level functions ``upload()`` and ``delete()`` drive cdnupload. You can create your own command-line entry point if you want to hook into cdnupload's Python API. For example, you could make a ``myupload.py`` script as follows::
+
+    import cdnupload
+    import hashlib
+
+    source = cdnupload.FileSource('/path/to/my/statics',
+                                  hash_class=hashlib.md5)
+    destination = cdnupload.S3Destination('s3://bucket/path')
+    upload(source, destination)
+
+Here we're doing some light customization of ``FileSource``'s hashing behaviour (changing it from SHA-1 to MD5) and then performing an upload.
+
+The ``upload()`` function uploads files from a source to a destination, but only if they're missing at the destination (according to ``destination.walk_keys``).
+
+The ``delete()`` function deletes files from the destination if they're no longer present at the source (according to ``source.build_key_map``).
+
+Both ``upload`` and ``delete`` take the same set of arguments:
+
+* ``source``: the source object; either a ``FileSource`` instance (or object that implements the same interface), or a string in which case it gets converted to a source via ``FileSource(source)``
+* ``destination``: the destination object; either an instance of a concrete ``Destination`` subclass, or a string in which case it gets converted to a destination via ``FileDestination(source)``
+* ``force=False``: if True, same as specifying the ``--force`` command line option
+* ``dry_run=False``: if True, same as specifying the ``--dry-run`` command line option
+* ``continue_on_errors=False``: if True, same as specifying the ``--continue-on-errors`` command line option
+
+Both functions return a ``Result`` namedtuple, which has the following attributes:
+
+* ``source_key_map``: the source path to destination key mapping, the same dict returned by ``source.build_key_map()``
+* ``destination_keys``: a set containing the destination keys, as returned by ``destination.walk_keys()``
+* ``num_scanned``: total number of files scanned (source files when uploading, or destination keys when deleting)
+* ``num_processed``: number of files processed (uploaded or deleted)
+* ``num_errors``: number of errors (useful when ``continue_on_errors`` is true)
 
 Custom destination
 ------------------
 
-The most likely reason you'll need to extend cdnupload is to write a custom ``Destination`` subclass (if the built-in file or Amazon S3 destinations don't work for you).
+The most likely reason you'll need to extend cdnupload is to write a custom ``Destination`` subclass (if the built-in file or Amazon S3 destinations don't work for you). TODO: add something about using FileSource with an external copy tool.
 
 For example, if you're using a CDN that connects to an origin server called "My Origin", you might write a custom subclass for uploading to your origin. You'll need to subclass ``cdnupload.Destination`` and implement an initalizer as well as the ``__str__``, ``walk_keys``, ``upload``, and ``delete`` methods::
 
@@ -296,7 +331,33 @@ Note that when the command-line tool passes additional dest_args to a custom des
 Custom source
 -------------
 
-TODO
+You can also customize the source of the files. There's currently only one source class, ``FileSource``, which reads files from the filesystem and produces their hashes. You can pass options to the ``FileSource`` initializer to control which files it includes or excludes, as well as how it hashes their contents to produce the content-based hash.
+
+The ``dot_names``, ``include``, ``exclude``, ``ignore_walk_errors``, ``follow_symlinks``, and ``hash_length`` arguments correspond directly to the ``--dot-names``, ``--include``, ``--exclude``, ``--ignore-walk-errors``, ``--follow-symlinks``, and ``--hash-length`` command line options.
+
+Additionally, you can customize ``FileSource`` further with the ``hash_chunk_size`` and ``hash_class`` arguments.
+
+Or you can subclass ``FileSource`` if you want to customize advanced behaviour. For example, you could override ``FileSource.hash_file()``'s handling of text and binary files to treat all files as binary::
+
+    from cdnupload import FileSource
+
+    class BinarySource(FileSource):
+        def hash_file(self, rel_path):
+            return FileSource.hash_file(self, rel_path, is_text=False)
+
+To use a subclassed ``FileSource``, you'll need to call the ``upload()`` and ``delete()`` functions with your instance directly from Python. It's not currently possibly to use a subclassed source via the cdnupload command line script.
+
+Logging
+-------
+
+cdnupload functions use standard Python logging to log all operations. The name of the logger is ``cdnupload``, so you can control log output format and verbosity (log level) using the Python logging functions.
+
+For example, to log all errors but turn debug-level logging on only for cdnupload logs, you could do this::
+
+    import logging
+
+    logging.basicConfig(level=logging.ERROR)
+    logging.getLogger('cdnupload').setLevel(logging.DEBUG)
 
 
 Contributing
