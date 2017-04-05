@@ -250,41 +250,6 @@ Python API
 
 cdnupload is a Python command-line script, but it's also a Python module you can import and extend if you need to customize it or hook into advanced features. It works on both Python 3.4+ and Python 2.7.
 
-Upload and delete
------------------
-
-The top-level functions ``upload()`` and ``delete()`` drive cdnupload. You can create your own command-line entry point if you want to hook into cdnupload's Python API. For example, you could make a ``myupload.py`` script as follows::
-
-    import cdnupload
-    import hashlib
-
-    source = cdnupload.FileSource('/path/to/my/statics',
-                                  hash_class=hashlib.md5)
-    destination = cdnupload.S3Destination('s3://bucket/path')
-    upload(source, destination)
-
-Here we're doing some light customization of ``FileSource``'s hashing behaviour (changing it from SHA-1 to MD5) and then performing an upload.
-
-The ``upload()`` function uploads files from a source to a destination, but only if they're missing at the destination (according to ``destination.walk_keys``).
-
-The ``delete()`` function deletes files from the destination if they're no longer present at the source (according to ``source.build_key_map``).
-
-Both ``upload`` and ``delete`` take the same set of arguments:
-
-* ``source``: the source object; either a ``FileSource`` instance (or object that implements the same interface), or a string in which case it gets converted to a source via ``FileSource(source)``
-* ``destination``: the destination object; either an instance of a concrete ``Destination`` subclass, or a string in which case it gets converted to a destination via ``FileDestination(source)``
-* ``force=False``: if True, same as specifying the ``--force`` command line option
-* ``dry_run=False``: if True, same as specifying the ``--dry-run`` command line option
-* ``continue_on_errors=False``: if True, same as specifying the ``--continue-on-errors`` command line option
-
-Both functions return a ``Result`` namedtuple, which has the following attributes:
-
-* ``source_key_map``: the source path to destination key mapping, the same dict returned by ``source.build_key_map()``
-* ``destination_keys``: a set containing the destination keys, as returned by ``destination.walk_keys()``
-* ``num_scanned``: total number of files scanned (source files when uploading, or destination keys when deleting)
-* ``num_processed``: number of files processed (uploaded or deleted)
-* ``num_errors``: number of errors (useful when ``continue_on_errors`` is true)
-
 Custom destination
 ------------------
 
@@ -327,6 +292,41 @@ For example, if you're using a CDN that connects to an origin server called "My 
 To use this custom destination, save your custom code to ``cdnupload_my.py`` and ensure the file is somewhere on your PYTHONPATH. Then if you run the cdnupload command-line tool with a destination starting with scheme ``my://``, it will automatically import ``cdnupload_my`` and look for a class called ``Destination``, passing the ``my://server/path`` URL and any additional destination arguments to your initializer.
 
 Note that when the command-line tool passes additional dest_args to a custom destination, it always passes them as strings (or a list of strings if a dest arg is specified more than once). So if you need an integer or other type, you'll need to convert it in your ``__init__`` method.
+
+Upload and delete
+-----------------
+
+The top-level functions ``upload()`` and ``delete()`` drive cdnupload. You can create your own command-line entry point if you want to hook into cdnupload's Python API. For example, you could make a ``myupload.py`` script as follows::
+
+    import cdnupload
+    import hashlib
+
+    source = cdnupload.FileSource('/path/to/my/statics',
+                                  hash_class=hashlib.md5)
+    destination = cdnupload.S3Destination('s3://bucket/path')
+    upload(source, destination)
+
+Here we're doing some light customization of ``FileSource``'s hashing behaviour (changing it from SHA-1 to MD5) and then performing an upload.
+
+The ``upload()`` function uploads files from a source to a destination, but only if they're missing at the destination (according to ``destination.walk_keys``).
+
+The ``delete()`` function deletes files from the destination if they're no longer present at the source (according to ``source.build_key_map``).
+
+Both ``upload`` and ``delete`` take the same set of arguments:
+
+* ``source``: the source object; either a ``FileSource`` instance (or object that implements the same interface), or a string in which case it gets converted to a source via ``FileSource(source)``
+* ``destination``: the destination object; either an instance of a concrete ``Destination`` subclass, or a string in which case it gets converted to a destination via ``FileDestination(source)``
+* ``force=False``: if True, same as specifying the ``--force`` command line option
+* ``dry_run=False``: if True, same as specifying the ``--dry-run`` command line option
+* ``continue_on_errors=False``: if True, same as specifying the ``--continue-on-errors`` command line option
+
+Both functions return a ``Result`` namedtuple, which has the following attributes:
+
+* ``source_key_map``: the source path to destination key mapping, the same dict returned by ``source.build_key_map()``
+* ``destination_keys``: a set containing the destination keys, as returned by ``destination.walk_keys()``
+* ``num_scanned``: total number of files scanned (source files when uploading, or destination keys when deleting)
+* ``num_processed``: number of files processed (uploaded or deleted)
+* ``num_errors``: number of errors (useful when ``continue_on_errors`` is true)
 
 Custom source
 -------------
