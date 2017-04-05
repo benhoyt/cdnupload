@@ -98,7 +98,7 @@ class FileSource(object):
                  ignore_walk_errors=False, follow_symlinks=False,
                  hash_length=DEFAULT_HASH_LENGTH, hash_chunk_size=64*1024,
                  hash_class=hashlib.sha1, cache_key_map=True, _os_walk=os.walk):
-        """Initialize instance for sourcing file from given root directory.
+        """Initialize instance for sourcing files from given root directory.
 
         Include directories and files starting with '.' if "dot_names" is True
         (exclude them by default). If "include" is specified, only include
@@ -450,8 +450,8 @@ Result = collections.namedtuple('Result', [
 def upload(source, destination, force=False, dry_run=False,
            continue_on_errors=False):
     """Upload missing files from source to destination (an instance of a
-    Destination subclass). Return tuple of (num_files_scanned, num_uploaded,
-    num_errors).
+    Destination subclass). Return a Result namedtuple, which includes the
+    source key map, set of destination keys, and upload statistics.
 
     If "source" is a string, FileSource(source) is used as the source
     instance. Otherwise "source" must be a FileSource instance.
@@ -538,8 +538,9 @@ def upload(source, destination, force=False, dry_run=False,
 def delete(source, destination, force=False, dry_run=False,
            continue_on_errors=False):
     """Delete files from destination (an instance of a Destination subclass)
-    that are no longer present in source tree. Return tuple of
-    (num_files_scanned, num_deleted, num_errors).
+    that are no longer present in source tree. Return a Result namedtuple,
+    which includes the source key map, set of destination keys, and deletion
+    statistics.
 
     If "source" is a string, FileSource(source) is used as the source
     instance. Otherwise "source" must be a FileSource instance.
