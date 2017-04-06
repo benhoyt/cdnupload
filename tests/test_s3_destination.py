@@ -1,9 +1,7 @@
 """Test S3Destination class.
 
-This is pretty white-box testing, and not testing the actual upload to
-S3, but it'll do for now.
-
-TODO: add real S3 tests against a test bucket
+This is very much white-box testing, and not testing the actual upload to S3,
+but it'll do for now.
 """
 
 import pytest
