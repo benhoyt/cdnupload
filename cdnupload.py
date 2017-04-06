@@ -40,6 +40,13 @@ __version__ = '1.0.0'
 
 DEFAULT_HASH_LENGTH = 16
 LICENSES = ['open', 'single', 'multi']
+LOG_LEVELS = [
+    ('verbose', logging.DEBUG),
+    ('default', logging.INFO),
+    ('quiet', logging.WARNING),
+    ('errors', logging.ERROR),
+    ('off', logging.CRITICAL),
+]
 
 logger = logging.getLogger('cdnupload')
 
@@ -737,7 +744,7 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
                         help='write source key map to given file as JSON '
                              '(but only after successful upload or delete)')
     parser.add_argument('-l', '--log-level', default='default',
-                        choices=['verbose', 'default', 'quiet', 'errors', 'off'],
+                        choices=[k for k, v in LOG_LEVELS],
                         help='set logging level')
     parser.add_argument('-v', '--version', action='version', version=__version__)
 
@@ -767,15 +774,9 @@ Amazon S3 bucket, with content-based hash in filenames for versioning.
     if args.license is None and not is_license_valid():
         return 1
 
-    log_levels = {
-        'verbose': logging.DEBUG,
-        'default': logging.INFO,
-        'quiet': logging.WARNING,
-        'errors': logging.ERROR,
-        'off': logging.CRITICAL,
-    }
     logging.basicConfig(level=logging.WARNING, format='%(message)s')
-    logger.setLevel(log_levels[args.log_level])
+    log_level = next(v for k, v in LOG_LEVELS if k == args.log_level)
+    logger.setLevel(log_level)
 
     match = re.match(r'(\w+):', args.destination)
     if match:
