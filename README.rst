@@ -51,7 +51,7 @@ After cdnupload is installed, you can run the command-line script simply by typi
 Overview
 ========
 
-cdnupload is primarily a **command-line tool** that uploads your site’s static files to a CDN (well, really the CDN’s origin server). It optionally generates a JSON "key mapping" that maps filename to destination key. The destination key is the filename with a hash in it based on the file’s contents. This allows you to set up the CDN to cache your static files aggresively, with an essentially infinite expiry time (max age).
+cdnupload is primarily a **command-line tool** that uploads your site’s static files to a CDN (well, really the CDN’s origin server). It optionally generates a JSON “key mapping” that maps filename to destination key. The destination key is the filename with a hash in it based on the file’s contents. This allows you to set up the CDN to cache your static files aggresively, with an essentially infinite expiry time (max age).
 
 (For a brief introduction to what a CDN is and why you might want to use one, `see the CDN section on the cdnupload homepage. <https://cdnupload.com/#cdn>`_)
 
@@ -79,7 +79,7 @@ Here’s what the output might be after the above uploads::
 
     deleting mobile_bbe960a25ea311d2.css
 
-There are many command-line options to control what files to upload, change the destination parameters, etc. And you can use the Python API directly if you need advanced features or if you need to add another destination "provider". See details in the `command-line usage section below. <#command-line-usage>`_
+There are many command-line options to control what files to upload, change the destination parameters, etc. And you can use the Python API directly if you need advanced features or if you need to add another destination “provider”. See details in the `command-line usage section below. <#command-line-usage>`_
 
 You’ll also need to **integrate with your web server** so that your web application knows the hash mapping and can output the correct static URLs. That can be as simple as a ``static_url`` template function that uses the key map JSON to convert from a file path to the destination key. See details in the `web server integration section below. <#web-server-integration>`_
 
@@ -255,7 +255,7 @@ Custom destination
 
 The most likely reason you’ll need to extend cdnupload is to write a custom ``Destination`` subclass (if the built-in file or Amazon S3 destinations don’t work for you).
 
-For example, if you’re using a CDN that connects to an origin server called "My Origin", you might write a custom subclass for uploading to your origin. You’ll need to subclass ``cdnupload.Destination`` and implement an initalizer as well as the ``__str__``, ``walk_keys``, ``upload``, and ``delete`` methods::
+For example, if you’re using a CDN that connects to an origin server called “My Origin”, you might write a custom subclass for uploading to your origin. You’ll need to subclass ``cdnupload.Destination`` and implement an initalizer as well as the ``__str__``, ``walk_keys``, ``upload``, and ``delete`` methods::
 
     import cdnupload
     import myorigin
