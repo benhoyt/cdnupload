@@ -39,7 +39,7 @@ cdnupload is a Python package which runs under Python 3.4+ as well as Python 2.7
 
 If you are using a specific version of Python or want to install it in a virtual Python environment, activate the virtual environment first, then run the ``pip install`` command.
 
-Additionally, if you'll be using Amazon S3 as a destination, you'll need to install the ``boto3`` package to interact with Amazon S3. To install boto3, type the following (in your virtual environment if you're using one)::
+Additionally, if you’ll be using Amazon S3 as a destination, you’ll need to install the ``boto3`` package to interact with Amazon S3. To install boto3, type the following (in your virtual environment if you’re using one)::
 
     pip install boto3
 
@@ -51,7 +51,7 @@ After cdnupload is installed, you can run the command-line script simply by typi
 Overview
 ========
 
-cdnupload is primarily a **command-line tool** that uploads your site's static files to a CDN (well, really the CDN's origin server). It optionally generates a JSON "key mapping" that maps filename to destination key. The destination key is the filename with a hash in it based on the file's contents. This allows you to set up the CDN to cache your static files aggresively, with an essentially infinite expiry time (max age).
+cdnupload is primarily a **command-line tool** that uploads your site’s static files to a CDN (well, really the CDN’s origin server). It optionally generates a JSON "key mapping" that maps filename to destination key. The destination key is the filename with a hash in it based on the file’s contents. This allows you to set up the CDN to cache your static files aggresively, with an essentially infinite expiry time (max age).
 
 (For a brief introduction to what a CDN is and why you might want to use one, `see the CDN section on the cdnupload homepage. <https://cdnupload.com/#cdn>`_)
 
@@ -66,7 +66,7 @@ The uploader will walk the source directory tree, query the destination S3 bucke
     uploading mobile.css to mobile_bbe960a25ea311d2.css
     writing key map JSON to statics.json
 
-If you modify mobile.css and then run it again, you'll see that it only uploads the changed files::
+If you modify mobile.css and then run it again, you’ll see that it only uploads the changed files::
 
     uploading mobile.css to mobile_6b369e490de120a9.css
     writing key map JSON to statics.json
@@ -75,13 +75,13 @@ It doesn’t delete unused files on the destination directory automatically (as 
 
     cdnupload /website/static s3://static-bucket --action=delete
 
-Here's what the output might be after the above uploads::
+Here’s what the output might be after the above uploads::
 
     deleting mobile_bbe960a25ea311d2.css
 
 There are many command-line options to control what files to upload, change the destination parameters, etc. And you can use the Python API directly if you need advanced features or if you need to add another destination "provider". See details in the `command-line usage section below. <#command-line-usage>`_
 
-You'll also need to **integrate with your web server** so that your web application knows the hash mapping and can output the correct static URLs. That can be as simple as a ``static_url`` template function that uses the key map JSON to convert from a file path to the destination key. See details in the `web server integration section below. <#web-server-integration>`_
+You’ll also need to **integrate with your web server** so that your web application knows the hash mapping and can output the correct static URLs. That can be as simple as a ``static_url`` template function that uses the key map JSON to convert from a file path to the destination key. See details in the `web server integration section below. <#web-server-integration>`_
 
 
 Command-line usage
@@ -103,7 +103,7 @@ Destination and dest-args
 
 ``destination`` is the destination directory to upload to, or an ``s3://static-bucket/key/prefix`` path for upload to Amazon S3.
 
-You can also specify a custom scheme for the destination (the ``scheme://`` part of the URL), and cdnupload will try to import a module named ``cdnupload_scheme`` (which must be on the PYTHONPATH) and use that module's ``Destination`` class along with the ``dest_args`` to create the destination instance.
+You can also specify a custom scheme for the destination (the ``scheme://`` part of the URL), and cdnupload will try to import a module named ``cdnupload_scheme`` (which must be on the PYTHONPATH) and use that module’s ``Destination`` class along with the ``dest_args`` to create the destination instance.
 
 For example, if you create your own uploader for Google Cloud Storage, you might use the prefix ``gcs://`` and name your module ``cdnupload_gcs``. Then you could use ``gcs://my/path`` as a destination, and cdnupload would instantiate the destination instance using ``cdnupload_gcs.Destination('gcs://bucket', **dest_args)``.
 
@@ -127,10 +127,10 @@ Common arguments
         * ``dest-help``: Show help and available destination arguments for the given Destination class.
 
   -d, --dry-run
-        Show what the script would upload or delete instead of actually doing it. This option is recommended before running with ``--action=delete``, to ensure you're not deleting more than you expect.
+        Show what the script would upload or delete instead of actually doing it. This option is recommended before running with ``--action=delete``, to ensure you’re not deleting more than you expect.
 
   -e PATTERN, --exclude PATTERN
-        Exclude source files if their relative path matches the given pattern (according to globbing rules as per Python's ``fnmatch``). For example, ``*.txt`` to include all text files, or ``__pycache__/*`` to exclude everything under the *pycache* directory. This option may be specified multiple times to exclude more than one pattern.
+        Exclude source files if their relative path matches the given pattern (according to globbing rules as per Python’s ``fnmatch``). For example, ``*.txt`` to include all text files, or ``__pycache__/*`` to exclude everything under the *pycache* directory. This option may be specified multiple times to exclude more than one pattern.
 
         Excludes take precedence over includes, so you can do ``--include=*.txt`` but then exclude a specific text file with ``--exclude=docs/README.txt``.
 
@@ -140,7 +140,7 @@ Common arguments
         If deleting, allow the delete to occur even if all files on the destination would be deleted (the default is to prevent that to avoid ``rm -rf`` style mistakes).
 
   -i PATTERN, --include PATTERN
-        If specified, only include source files if their relative path matches the given pattern (according to globbing rules as per Python's ``fnmatch``). For example, ``*.png`` to include all PNG images, or ``images/*`` to include everything under the *images* directory. This option may be specified multiple times to include more than one pattern.
+        If specified, only include source files if their relative path matches the given pattern (according to globbing rules as per Python’s ``fnmatch``). For example, ``*.png`` to include all PNG images, or ``images/*`` to include everything under the *images* directory. This option may be specified multiple times to include more than one pattern.
 
         Excludes take precedence over includes, so you can do ``--include=*.txt`` but then exclude a specific text file with ``--exclude=docs/README.txt``.
 
@@ -154,12 +154,12 @@ Common arguments
 
         * ``verbose``: Most verbose output. Log even files that the script would skip uploading.
         * ``default``: Default level of output. Log when the script starts, finishes, and actual uploads and deletes that occur (or would occur if doing a ``--dry-run``).
-        * ``quiet``: Quieter than the default. Only log when and if the script actually uploads or deletes files (no start or finish logs). If there's nothing to do, don't log anything.
+        * ``quiet``: Quieter than the default. Only log when and if the script actually uploads or deletes files (no start or finish logs). If there’s nothing to do, don’t log anything.
         * ``errors``: Only log errors.
         * ``off``: Turn all logging off completely.
 
   -v, --version
-        Show cdnupload's version number and exit.
+        Show cdnupload’s version number and exit.
 
 Less common arguments
 ---------------------
@@ -179,11 +179,11 @@ Less common arguments
 Web server integration
 ======================
 
-In addition to using the command line script to upload files, you'll need to modify your web server so it knows how to generate the static URLs including the content-based hash in the filename.
+In addition to using the command line script to upload files, you’ll need to modify your web server so it knows how to generate the static URLs including the content-based hash in the filename.
 
 The recommended way to do this is to load the key mapping JSON, which is written out by the ``--key-map`` command line argument when you upload your statics. You can load this into a key-value dictionary when your server starts up, and then generating a static URL is as simple as looking up the relative path of a static file in this dictionary.
 
-Even though the keys in the JSON are relative file paths, they're normalized to always use ``/`` (forward slash) as the directory separator, even on Windows. This is so consumers of the mapping can look up files directly in the mapping with a consistent path separator.
+Even though the keys in the JSON are relative file paths, they’re normalized to always use ``/`` (forward slash) as the directory separator, even on Windows. This is so consumers of the mapping can look up files directly in the mapping with a consistent path separator.
 
 Below is a simple example of loading the key mapping in your web server startup (call ``init_server()`` on startup) and then defining a function to generate full static URLs for use in your HTML templates. This example is written in Python, but you can use any language that can parse JSON and look something up in a map::
 
@@ -213,13 +213,13 @@ If your web server is in fact written in Python, you can also ``import cdnupload
         source = cdnupload.FileSource(settings.static_dir)
         settings.static_paths = source.build_key_map()
 
-If you have huge numbers of static files, this is not recommended, as it does have to re-hash all the files when the server starts up. So for larger sites it's best to produce the key map JSON and copy that to your app servers as part of your deployment process.
+If you have huge numbers of static files, this is not recommended, as it does have to re-hash all the files when the server starts up. So for larger sites it’s best to produce the key map JSON and copy that to your app servers as part of your deployment process.
 
 
 Static URLs in CSS
 ==================
 
-If you reference static files in your CSS (for example, background images with ``url(...)`` expressions), you'll need to either remove them from your CSS and generate them in an inline ``<style>`` section at the top of your HTML, or use a post-processor script on your CSS to change the URLs from relative to full hashed URLs.
+If you reference static files in your CSS (for example, background images with ``url(...)`` expressions), you’ll need to either remove them from your CSS and generate them in an inline ``<style>`` section at the top of your HTML, or use a post-processor script on your CSS to change the URLs from relative to full hashed URLs.
 
 For small sites, it may be simpler to just extract them from your CSS. For example, for a CSS rule like this::
 
@@ -240,7 +240,7 @@ You would remove just the ``background-image`` line and put it in an inline styl
         </style>
     </head>
 
-However, for larger-scale sites where the CSS references a lot of static images, this quickly becomes hard to manage. In that case, you'll want to use a tool like `PostCSS <http://postcss.org/>`_ to rewrite static URLs in your CSS to cdnupload URLs via the key mapping. There's a PostCSS plugin called `postcss-url <https://github.com/postcss/postcss-url>`_ that you can use to rewrite URLs with a custom transform function.
+However, for larger-scale sites where the CSS references a lot of static images, this quickly becomes hard to manage. In that case, you’ll want to use a tool like `PostCSS <http://postcss.org/>`_ to rewrite static URLs in your CSS to cdnupload URLs via the key mapping. There’s a PostCSS plugin called `postcss-url <https://github.com/postcss/postcss-url>`_ that you can use to rewrite URLs with a custom transform function.
 
 The CSS rewriting should be integrated into your build or deployment process, as the PostCSS rule will need access to the JSON key mapping that the uploader wrote out.
 
@@ -248,14 +248,14 @@ The CSS rewriting should be integrated into your build or deployment process, as
 Python API
 ==========
 
-cdnupload is a Python command-line script, but it's also a Python module you can import and extend if you need to customize it or hook into advanced features. It works on both Python 3.4+ and Python 2.7.
+cdnupload is a Python command-line script, but it’s also a Python module you can import and extend if you need to customize it or hook into advanced features. It works on both Python 3.4+ and Python 2.7.
 
 Custom destination
 ------------------
 
-The most likely reason you'll need to extend cdnupload is to write a custom ``Destination`` subclass (if the built-in file or Amazon S3 destinations don't work for you).
+The most likely reason you’ll need to extend cdnupload is to write a custom ``Destination`` subclass (if the built-in file or Amazon S3 destinations don’t work for you).
 
-For example, if you're using a CDN that connects to an origin server called "My Origin", you might write a custom subclass for uploading to your origin. You'll need to subclass ``cdnupload.Destination`` and implement an initalizer as well as the ``__str__``, ``walk_keys``, ``upload``, and ``delete`` methods::
+For example, if you’re using a CDN that connects to an origin server called "My Origin", you might write a custom subclass for uploading to your origin. You’ll need to subclass ``cdnupload.Destination`` and implement an initalizer as well as the ``__str__``, ``walk_keys``, ``upload``, and ``delete`` methods::
 
     import cdnupload
     import myorigin
@@ -291,12 +291,12 @@ For example, if you're using a CDN that connects to an origin server called "My 
 
 To use this custom destination, save your custom code to ``cdnupload_my.py`` and ensure the file is somewhere on your PYTHONPATH. Then if you run the cdnupload command-line tool with a destination starting with scheme ``my://``, it will automatically import ``cdnupload_my`` and look for a class called ``Destination``, passing the ``my://server/path`` URL and any additional destination arguments to your initializer.
 
-Note that when the command-line tool passes additional dest_args to a custom destination, it always passes them as strings (or a list of strings if a dest arg is specified more than once). So if you need an integer or other type, you'll need to convert it in your ``__init__`` method.
+Note that when the command-line tool passes additional dest_args to a custom destination, it always passes them as strings (or a list of strings if a dest arg is specified more than once). So if you need an integer or other type, you’ll need to convert it in your ``__init__`` method.
 
 Upload and delete
 -----------------
 
-The top-level functions ``upload()`` and ``delete()`` drive cdnupload. You can create your own command-line entry point if you want to hook into cdnupload's Python API. For example, you could make a ``myupload.py`` script as follows::
+The top-level functions ``upload()`` and ``delete()`` drive cdnupload. You can create your own command-line entry point if you want to hook into cdnupload’s Python API. For example, you could make a ``myupload.py`` script as follows::
 
     import cdnupload
     import hashlib
@@ -306,11 +306,11 @@ The top-level functions ``upload()`` and ``delete()`` drive cdnupload. You can c
     destination = cdnupload.S3Destination('s3://bucket/path')
     upload(source, destination)
 
-Here we're doing some light customization of ``FileSource``'s hashing behaviour (changing it from SHA-1 to MD5) and then performing an upload.
+Here we’re doing some light customization of ``FileSource``’s hashing behaviour (changing it from SHA-1 to MD5) and then performing an upload.
 
-The ``upload()`` function uploads files from a source to a destination, but only if they're missing at the destination (according to ``destination.walk_keys``).
+The ``upload()`` function uploads files from a source to a destination, but only if they’re missing at the destination (according to ``destination.walk_keys``).
 
-The ``delete()`` function deletes files from the destination if they're no longer present at the source (according to ``source.build_key_map``).
+The ``delete()`` function deletes files from the destination if they’re no longer present at the source (according to ``source.build_key_map``).
 
 Both ``upload`` and ``delete`` take the same set of arguments:
 
@@ -331,13 +331,13 @@ Both functions return a ``Result`` namedtuple, which has the following attribute
 Custom source
 -------------
 
-You can also customize the source of the files. There's currently only one source class, ``FileSource``, which reads files from the filesystem and produces their hashes. You can pass options to the ``FileSource`` initializer to control which files it includes or excludes, as well as how it hashes their contents to produce the content-based hash.
+You can also customize the source of the files. There’s currently only one source class, ``FileSource``, which reads files from the filesystem and produces their hashes. You can pass options to the ``FileSource`` initializer to control which files it includes or excludes, as well as how it hashes their contents to produce the content-based hash.
 
 The ``dot_names``, ``include``, ``exclude``, ``ignore_walk_errors``, ``follow_symlinks``, and ``hash_length`` arguments correspond directly to the ``--dot-names``, ``--include``, ``--exclude``, ``--ignore-walk-errors``, ``--follow-symlinks``, and ``--hash-length`` command line options.
 
 Additionally, you can customize ``FileSource`` further with the ``hash_chunk_size`` and ``hash_class`` arguments.
 
-Or you can subclass ``FileSource`` if you want to customize advanced behaviour. For example, you could override ``FileSource.hash_file()``'s handling of text and binary files to treat all files as binary::
+Or you can subclass ``FileSource`` if you want to customize advanced behaviour. For example, you could override ``FileSource.hash_file()``’s handling of text and binary files to treat all files as binary::
 
     from cdnupload import FileSource
 
@@ -345,7 +345,7 @@ Or you can subclass ``FileSource`` if you want to customize advanced behaviour. 
         def hash_file(self, rel_path):
             return FileSource.hash_file(self, rel_path, is_text=False)
 
-To use a subclassed ``FileSource``, you'll need to call the ``upload()`` and ``delete()`` functions with your instance directly from Python. It's not currently possibly to use a subclassed source via the cdnupload command line script.
+To use a subclassed ``FileSource``, you’ll need to call the ``upload()`` and ``delete()`` functions with your instance directly from Python. It’s not currently possibly to use a subclassed source via the cdnupload command line script.
 
 Logging
 -------
@@ -371,9 +371,9 @@ If you find a bug in cdnupload, please open an issue with the following informat
 * The cdnupload version, Python version, and operating system type and version
 * Steps or a test case that reproduces the issue (ideally)
 
-If you have a feature request or suggestion, open an issue and we'll discuss!
+If you have a feature request or suggestion, open an issue and we’ll discuss!
 
-You're welcome to submit a pull request as well, but it's usually best to open an issue first, so we can discuss the changes before you put a lot of time into the fix or feature.
+You’re welcome to submit a pull request as well, but it’s usually best to open an issue first, so we can discuss the changes before you put a lot of time into the fix or feature.
 
 See `CONTRIBUTING.md <https://github.com/benhoyt/cdnupload/blob/master/CONTRIBUTING.md>`_ in the cdnupload source tree for some legal requirements and more information.
 
@@ -381,4 +381,4 @@ See `CONTRIBUTING.md <https://github.com/benhoyt/cdnupload/blob/master/CONTRIBUT
 About the author
 ================
 
-cdnupload is written and maintained by Ben Hoyt: a `software developer <http://benhoyt.com/cv/>`_, `Python contributor <http://benhoyt.com/writings/scandir/>`_, and general all-round computer geek. `Read how and why he wrote cdnupload. <http://TODO>`_
+cdnupload is written and maintained by Ben Hoyt: a `software developer <http://benhoyt.com/cv/>`_, `Python contributor <http://benhoyt.com/writings/scandir/>`_, and general all-round software geek. See his personal website as `benhoyt.com <http://benhoyt.com/>`_.
