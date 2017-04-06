@@ -5,3 +5,5 @@ __pycache__/
 cdnupload.egg-info/
 output/
 .venv/
+build/
+dist/

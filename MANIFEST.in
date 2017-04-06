@@ -1,0 +1,5 @@
+include *.py
+include tests/*.py
+include README.rst
+include LICENSE.txt
+include CONTRIBUTING.md
