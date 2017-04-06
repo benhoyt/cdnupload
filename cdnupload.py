@@ -41,10 +41,10 @@ __version__ = '1.0.0'
 DEFAULT_HASH_LENGTH = 16
 LICENSES = ['open', 'single', 'multi']
 LOG_LEVELS = [
-    ('verbose', logging.DEBUG),
-    ('default', logging.INFO),
-    ('quiet', logging.WARNING),
-    ('errors', logging.ERROR),
+    ('debug', logging.DEBUG),
+    ('verbose', logging.INFO),
+    ('default', logging.WARNING),
+    ('error', logging.ERROR),
     ('off', logging.CRITICAL),
 ]
 

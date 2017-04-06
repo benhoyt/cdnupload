@@ -157,10 +157,10 @@ Common arguments
   -l LEVEL, --log-level LEVEL
         Set the verbosity of the log output. The level must be one of:
 
-        * ``verbose``: Most verbose output. Log even files that the script would skip uploading.
-        * ``default``: Default level of output. Log when the script starts, finishes, and actual uploads and deletes that occur (or would occur if doing a ``--dry-run``).
-        * ``quiet``: Quieter than the default. Only log when and if the script actually uploads or deletes files (no start or finish logs). If there’s nothing to do, don’t log anything.
-        * ``errors``: Only log errors.
+        * ``debug``: Most detailed output. Log even files that the script would skip uploading.
+        * ``verbose``: Verbose output. Log when the script starts, finishes, and when uploads and deletes occur (or would occur if doing a ``--dry-run``).
+        * ``default``: Default level of log output. Only log when and if the script actually uploads or deletes files (no start or finish logs). If there’s nothing to do, don’t log anything.
+        * ``error``: Only log errors.
         * ``off``: Turn all logging off completely.
 
   -v, --version
