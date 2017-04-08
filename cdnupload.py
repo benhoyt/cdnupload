@@ -36,7 +36,7 @@ except ImportError:
 __all__ = ['SourceError', 'DestinationError', 'FileSource', 'Destination',
            'FileDestination', 'S3Destination', 'upload', 'delete']
 
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 DEFAULT_HASH_LENGTH = 16
 LICENSES = ['open', 'single', 'multi']
