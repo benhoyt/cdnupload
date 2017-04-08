@@ -11,7 +11,7 @@ Documentation
 Introduction
 ============
 
-cdnupload uploads your website’s static files to a CDN with a content-based hash in the filenames, giving great caching while avoiding versioning issues.
+`cdnupload <https://cdnupload.com/>`_ uploads your website’s static files to a CDN with a content-based hash in the filenames, giving great caching while avoiding versioning issues.
 
 .. container:: read-online
     :name: read-online
