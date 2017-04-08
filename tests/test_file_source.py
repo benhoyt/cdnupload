@@ -216,7 +216,9 @@ def test_walk_files_errors(tmpdir):
             list(file_source.walk_files())
             assert False  # shouldn't get here
         except OSError as error:
-            assert error.filename == error_path
+            # On Python 2.x on Windows, error.filename includes '*.*'
+            assert (error.filename == error_path or
+                    error.filename == os.path.join(error_path, '*.*'))
 
     not_exists = tmpdir.join('not_exists')
     s = FileSource(not_exists.strpath)

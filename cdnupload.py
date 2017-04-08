@@ -36,7 +36,7 @@ except ImportError:
 __all__ = ['SourceError', 'DestinationError', 'FileSource', 'Destination',
            'FileDestination', 'S3Destination', 'upload', 'delete']
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 DEFAULT_HASH_LENGTH = 16
 LICENSES = ['open', 'single', 'multi']
@@ -217,8 +217,10 @@ class FileSource(object):
 
         # Ensure that errors while walking are raised as hard errors, unless
         # ignore_walk_errors is True or it's an error listing the root dir
+        # (on Python 2.x on Windows, error.filename includes the '*.*')
         def onerror(error):
-            if not self.ignore_walk_errors or error.filename == walk_root:
+            if (not self.ignore_walk_errors or error.filename == walk_root or
+                    error.filename == os.path.join(walk_root, '*.*')):
                 raise error
             else:
                 logger.debug('ignoring error scanning source tree: %s', error)
