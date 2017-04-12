@@ -22,9 +22,9 @@ Introduction
 Multi-licensing
 ===============
 
-cdnupload is © Ben Hoyt 2017 and licensed under multiple licenses (`read why here <https://cdnupload.com/#licensing>`_). It’s free for open source websites and non-profits, and there are two well-priced commercial licenses available for businesses. The three license options are:
+cdnupload is © Ben Hoyt 2017 and licensed under multiple licenses (`read why here <https://cdnupload.com/#licensing>`_). It’s free for open source websites, and there are two well-priced commercial licenses available for businesses. The three license options are:
 
-1. **Open:** if the code for your website is open source, or if you’re a non-profit organization, you can use cdnupload for free under an AGPL license. `Read the full text of the AGPL v3 license. <https://www.gnu.org/licenses/agpl-3.0.en.html>`_
+1. **Open:** if the code for your website is open source, you can use cdnupload for free under an AGPL license. `Read the full text of the AGPL v3 license. <https://www.gnu.org/licenses/agpl-3.0.en.html>`_
 
 2. **Single website:** if your business has a single website, this commercial license tier is for you. `See pricing and more details about the single website tier. <https://cdnupload.com/single>`_
 

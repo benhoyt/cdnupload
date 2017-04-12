@@ -1,7 +1,7 @@
 
 cdnupload is (c) Ben Hoyt 2017 and licensed under multiple licenses: it's
-free for open source websites and non-profits, and there are two well-priced
-commercial licenses available for businesses. See the "Multi-licensing"
-section in README.rst for details:
+free for open source websites, and there are two well-priced commercial
+licenses available for businesses. See the "Multi-licensing" section in
+README.rst for details:
 
 https://cdnupload.com/docs#multi-licensing

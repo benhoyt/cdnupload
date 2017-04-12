@@ -4,8 +4,8 @@ Run "python cdnupload.py -h" for command line help, or see README.rst for
 full documentation.
 
 cdnupload is (c) Ben Hoyt 2017 and licensed under multiple licenses: it's
-free for open source websites and non-profits, and there are two well-priced
-commercial licenses available for businesses.
+free for open source websites, and there are two well-priced commercial
+licenses available for businesses.
 
 Visit the project's website for more details and for licensing information:
 
@@ -36,7 +36,7 @@ except ImportError:
 __all__ = ['SourceError', 'DestinationError', 'FileSource', 'Destination',
            'FileDestination', 'S3Destination', 'upload', 'delete']
 
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 DEFAULT_HASH_LENGTH = 16
 LICENSES = ['open', 'single', 'multi']
@@ -659,9 +659,8 @@ license types:
   single    single website commercial license with support
   multi     multi-website commercial license with support
 
-If you're using cdnupload for an open source website or a non-profit, type
-"open". If you've paid for a single website or multi-website license, type
-"single" or "multi".
+If you're using cdnupload for an open source website, type "open". If you've
+paid for a single website or multi-website license, type "single" or "multi".
 
 You'll only have to type this once (it's saved to {license_path}).
 
