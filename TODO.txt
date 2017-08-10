@@ -1,0 +1,28 @@
+
+cdnupload works fine right now (I used it on a couple of my sites).
+But here are some things I'd like to add eventually.
+
+
+* tests: more unicode filename tests: src, dest, s3?
+* tests: real S3 tests against a test bucket
+* tests: main() tests
+
+* remove include/exclude dirs in walk_files() more efficiently if they match?
+
+* should we ignore permissions errors on files if --ignore-walk-errors is specified?
+
+* support for parallel s3 uploads (multiprocessing.dummy thread pool?)
+    START:
+    if num_threads > 1:
+        thread_pool = multiprocessing.dummy.Pool(num_threads)
+
+    UPLOAD:
+    if num_threads > 1:
+        thread_pool.apply_async(destination.upload, (key, source, rel_path))
+    else:
+        destination.upload(key, source, rel_path)
+
+    END:
+    if num_threads > 1:
+        logger.info('waiting for parallel uploads to finish')
+        thread_pool.join() # or whatever

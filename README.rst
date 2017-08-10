@@ -11,26 +11,38 @@ Documentation
 Introduction
 ============
 
-`cdnupload <https://cdnupload.com/>`_ uploads your website’s static files to a CDN with a content-based hash in the filenames, giving great caching while avoiding versioning issues.
+cdnupload uploads your website’s static files to a CDN with a content-based hash in the filenames, giving great caching while avoiding versioning issues.
 
-.. container:: read-online
-    :name: read-online
+* Fast and simple to integrate
+* Helps you follow web best practices: `use a CDN <#why-should-i-use-a-cdn>`_, good Cache-Control headers, versioned filenames
+* Works with web apps written in any language
+* Written in Python (runs on Python 2 and 3)
 
-    Read this documentation online for best results: https://cdnupload.com/docs
+The tool helps you follow performance best practices by including a content-based hash in each asset filename.
 
+Deploying is really fast too: only files that have actually changed will be uploaded (with a new hash).
 
-Multi-licensing
-===============
+cdnupload is **trivial to install**::
 
-cdnupload is © Ben Hoyt 2017 and licensed under multiple licenses (`read why here <https://cdnupload.com/#licensing>`_). It’s free for open source websites, and there are two well-priced commercial licenses available for businesses. The three license options are:
+    $ pip install cdnupload
 
-1. **Open:** if the code for your website is open source, you can use cdnupload for free under an AGPL license. `Read the full text of the AGPL v3 license. <https://www.gnu.org/licenses/agpl-3.0.en.html>`_
+It's **simple to use**::
 
-2. **Single website:** if your business has a single website, this commercial license tier is for you. `See pricing and more details about the single website tier. <https://cdnupload.com/single>`_
+    $ cdnupload /site/statics s3://statics-bucket --key-map=statics.json
+    uploading script.js to script_8f3283c6342816f7.js
+    uploading style.css to style_abcdef0123456789.css
+    writing key map JSON to statics.json
 
-3. **Multi-website:** this license is a commercial license for using cdnupload on up to 10 websites. `See pricing and more details about the multi-website tier. <https://cdnupload.com/multi>`_
+And it's **easy to integrate** in most languages, for example Python::
 
-If your company’s requirements don’t fit into any of the above, or you want to discuss a custom license, please contact us at `info@cdnupload.com <mailto:info@cdnupload.com>`_.
+    import json, settings
+
+    def init_server():
+        with open('statics.json') as f:
+            settings.statics = json.load(f)
+
+    def static_url(path):
+        return '//mycdn.com/' + settings.statics[path]
 
 
 Installation
@@ -56,7 +68,7 @@ Overview
 
 cdnupload is primarily a **command-line tool** that uploads your site’s static files to a CDN (well, really the CDN’s origin server). It optionally generates a JSON “key mapping” that maps file paths to destination keys. A destination key is a file path with a hash in it based on the file’s contents. This allows you to set up the CDN to cache your static files aggresively, with an essentially infinite expiry time (max age).
 
-(For a brief introduction to what a CDN is and why you might want to use one, `see the CDN section on the cdnupload homepage. <https://cdnupload.com/#cdn>`_)
+(For a brief introduction to what a CDN is and why you might want to use one, `see the CDN section of this document. <#why-should-i-use-a-cdn>`_)
 
 When you upload statics, you specify a source directory and a destination directory (or Amazon S3 URL or other origin pseudo-URL). For example, you can upload all the static files from the ``/website/static`` directory to ``static-bucket``, and output the key mapping to the file ``statics.json`` using the following command::
 
@@ -85,6 +97,30 @@ Here’s what the output might be after the above uploads::
 There are many `command-line options <#command-line-usage>`_ to control what files to upload, change the destination parameters, etc. And you can use the `Python API`_ directly if you need advanced features or if you need to add another destination “provider”.
 
 You’ll also need to **integrate with your web server** so that your web application knows the hash mapping and can output the correct static URLs. That can be as simple as a ``static_url`` template function that uses the key map JSON to convert from a file path to the destination key. See details in the `web server integration section below. <#web-server-integration>`_
+
+
+Why should I use a CDN?
+=======================
+
+*If you’re not sure what a CDN is, or if you’re wondering why you should use one, this section is for you.*
+
+.. image:: https://raw.githubusercontent.com/benhoyt/cdnupload/master/images/cdn.png
+    :alt: From Wikimedia under Creative Commons (NCDN_-_CDN.png)
+    :align: center
+
+CDN stands for Content Delivery Network, which is a service that serves your static files -- heavily cached, on servers around the world that are close to your users.
+
+So if someone from New Jersey requests ``https://mycdn.com/style.css``, the CDN will almost certainly have a cached version in an East Coast or even a local New Jersey data center, and will serve that up to the user faster than you can say “HTTP/2”.
+
+If the CDN doesn’t have a cached version of the file, it will in turn request it from the origin server (where the files are hosted). If you’re using something like Amazon S3 as your origin server, that request will be quick too, and user will still get the file in good time. From then on, the CDN will serve the cached version.
+
+Because the files are heavily cached (ideally with long expiry ties), you need to include version numbers in the filenames. cdnupload does this by appending to the filename a 16-character hash based on the file’s contents. For example, ``style.css`` might become ``style_abcdef0123456789.css``, and then ``style_a0b1c2d3e4f56789.css`` in the next revision.
+
+On one `website <https://giftyweddings.com/>`_ we run, we saw our **static file load time drop from 1500&nbsp;ms to 220&nbsp;ms** when we starting using cdnupload with the Amazon Cloudfront CDN.
+
+So you should use a CDN if your site gets a good amount of traffic, and you need good performance from various locations around the world. You probably *don’t* need to use a CDN if you have a small personal site.
+
+Using the `Amazon CloudFront <https://aws.amazon.com/cloudfront/>`_ CDN together with `Amazon S3 <https://aws.amazon.com/s3/>`_ as an origin server is a great place to start -- like other AWS products, you only pay for the bytes you use, and there’s no montly fee.
 
 
 Command-line usage
@@ -368,19 +404,23 @@ For example, to log all errors but turn debug-level logging on only for cdnuploa
 Contributing
 ============
 
-Even though cdnupload is multi-licensed, the source code is open, and contributions are welcomed.
-
 If you find a bug in cdnupload, please open an issue with the following information:
 
 * Full error messages or tracebacks
 * The cdnupload version, Python version, and operating system type and version
 * Steps or a test case that reproduces the issue (ideally)
 
-If you have a feature request or suggestion, open an issue and we’ll discuss!
+If you have a feature request, documentation fix, or other suggestion, open an issue and we’ll discuss!
 
-You’re welcome to submit a pull request as well, but it’s usually best to open an issue first, so we can discuss the changes before you put a lot of time into the fix or feature.
+See also `CONTRIBUTING.md <https://github.com/benhoyt/cdnupload/blob/master/CONTRIBUTING.md>`_ in the cdnupload source tree.
 
-See `CONTRIBUTING.md <https://github.com/benhoyt/cdnupload/blob/master/CONTRIBUTING.md>`_ in the cdnupload source tree for some legal requirements and more information.
+
+License
+=======
+
+cdnupload is licensed under a permissive MIT license: see `CONTRIBUTING.md <https://github.com/benhoyt/cdnupload/blob/master/LICENSE.txt>`_ for details.
+
+Note that prior to August 2017 it was licensed under an AGPL plus commercial license combination, but now it's completely free.
 
 
 About the author

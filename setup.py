@@ -34,8 +34,8 @@ setup(
     version=version,
     author='Ben Hoyt',
     author_email='benhoyt@gmail.com',
-    url='https://cdnupload.com/',
-    license='Multi-licensed: AGPLv3 and Commercial',
+    url='https://github.com/benhoyt/cdnupload',
+    license='MIT License',
     description='Upload static files from given source directory to '
                 'destination directory or Amazon S3 bucket, with content-'
                 'based hash in filenames for versioning.',
@@ -53,7 +53,7 @@ setup(
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Operating System :: OS Independent',
-        'License :: Other/Proprietary License',
+        'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
