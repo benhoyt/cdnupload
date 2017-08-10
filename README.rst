@@ -11,7 +11,7 @@ Documentation
 Introduction
 ============
 
-cdnupload uploads your website’s static files to a CDN with a content-based hash in the filenames, giving great caching while avoiding versioning issues.
+cdnupload uploads your website’s static files to a CDN with a content-based hash in the filenames, giving great caching while avoiding versioning issues. cdnupload is:
 
 * Fast and simple to integrate
 * Helps you follow web best practices: `use a CDN <#why-should-i-use-a-cdn>`_, good Cache-Control headers, versioned filenames
@@ -28,7 +28,7 @@ cdnupload is **trivial to install**::
 
 It's **simple to use**::
 
-    $ cdnupload /site/statics s3://statics-bucket --key-map=statics.json
+    $ cdnupload /website/static s3://static-bucket --key-map=statics.json
     uploading script.js to script_8f3283c6342816f7.js
     uploading style.css to style_abcdef0123456789.css
     writing key map JSON to statics.json
@@ -66,7 +66,7 @@ After cdnupload is installed, you can run the command-line script simply by typi
 Overview
 ========
 
-cdnupload is primarily a **command-line tool** that uploads your site’s static files to a CDN (well, really the CDN’s origin server). It optionally generates a JSON “key mapping” that maps file paths to destination keys. A destination key is a file path with a hash in it based on the file’s contents. This allows you to set up the CDN to cache your static files aggresively, with an essentially infinite expiry time (max age).
+cdnupload is primarily a **command-line tool** that uploads your site’s static files to a CDN (well, really the CDN’s origin server). It optionally generates a JSON “key mapping” that maps file paths to destination keys. A destination key is a file path with a hash in it based on the file’s contents. This allows you to set up the CDN to cache your static files aggressively, with an essentially infinite expiry time (max age).
 
 (For a brief introduction to what a CDN is and why you might want to use one, `see the CDN section of this document. <#why-should-i-use-a-cdn>`_)
 
@@ -112,15 +112,15 @@ CDN stands for Content Delivery Network, which is a service that serves your sta
 
 So if someone from New Jersey requests ``https://mycdn.com/style.css``, the CDN will almost certainly have a cached version in an East Coast or even a local New Jersey data center, and will serve that up to the user faster than you can say “HTTP/2”.
 
-If the CDN doesn’t have a cached version of the file, it will in turn request it from the origin server (where the files are hosted). If you’re using something like Amazon S3 as your origin server, that request will be quick too, and user will still get the file in good time. From then on, the CDN will serve the cached version.
+If the CDN doesn’t have a cached version of the file, it will in turn request it from the origin server (where the files are hosted). If you’re using something like Amazon S3 as your origin server, that request will be quick too, and the user will still get the file in good time. From then on, the CDN will serve the cached version.
 
-Because the files are heavily cached (ideally with long expiry ties), you need to include version numbers in the filenames. cdnupload does this by appending to the filename a 16-character hash based on the file’s contents. For example, ``style.css`` might become ``style_abcdef0123456789.css``, and then ``style_a0b1c2d3e4f56789.css`` in the next revision.
+Because the files are heavily cached (ideally with long expiry times), you need to include version numbers in the filenames. cdnupload does this by appending to the filename a 16-character hash based on the file’s contents. For example, ``style.css`` might become ``style_abcdef0123456789.css``, and then ``style_a0b1c2d3e4f56789.css`` in the next revision.
 
 On one `website <https://giftyweddings.com/>`_ we run, we saw our **static file load time drop from 1500ms to 220ms** when we starting using cdnupload with the Amazon Cloudfront CDN.
 
 So you should use a CDN if your site gets a good amount of traffic, and you need good performance from various locations around the world. You probably *don’t* need to use a CDN if you have a small personal site.
 
-Using the `Amazon CloudFront <https://aws.amazon.com/cloudfront/>`_ CDN together with `Amazon S3 <https://aws.amazon.com/s3/>`_ as an origin server is a great place to start -- like other AWS products, you only pay for the bytes you use, and there’s no montly fee.
+Using the `Amazon CloudFront <https://aws.amazon.com/cloudfront/>`_ CDN together with `Amazon S3 <https://aws.amazon.com/s3/>`_ as an origin server is a great place to start -- like other AWS products, you only pay for the bytes you use, and there’s no monthly fee.
 
 
 Command-line usage
@@ -130,7 +130,7 @@ The format of the cdnupload command line is::
 
     cdnupload [options] source destination [dest_args]
 
-Where ``options`` are short or long (``-s`` or ``--long``) command line options. You can mix these freely with the positional arguments if you want.
+Where ``options`` are short or long command line options (``-s`` or ``--long``). You can mix these freely with the positional arguments if you want.
 
 Source
 ------
@@ -171,7 +171,7 @@ Common arguments
         Show what the script would upload or delete instead of actually doing it. This option is recommended before running with ``--action=delete``, to ensure you’re not deleting more than you expect.
 
   -e PATTERN, --exclude PATTERN
-        Exclude source files if their relative path matches the given pattern (according to globbing rules as per Python’s ``fnmatch``). For example, ``*.txt`` to include all text files, or ``__pycache__/*`` to exclude everything under the *pycache* directory. This option may be specified multiple times to exclude more than one pattern.
+        Exclude source files if their relative path matches the given pattern (according to globbing rules as per Python’s ``fnmatch``). For example, ``*.txt`` to exclude all text files, or ``__pycache__/*`` to exclude everything under the *pycache* directory. This option may be specified multiple times to exclude more than one pattern.
 
         Excludes take precedence over includes, so you can do ``--include=*.txt`` but then exclude a specific text file with ``--exclude=docs/README.txt``.
 
@@ -418,7 +418,7 @@ See also `CONTRIBUTING.md <https://github.com/benhoyt/cdnupload/blob/master/CONT
 License
 =======
 
-cdnupload is licensed under a permissive MIT license: see `CONTRIBUTING.md <https://github.com/benhoyt/cdnupload/blob/master/LICENSE.txt>`_ for details.
+cdnupload is licensed under a permissive MIT license: see `LICENSE.txt <https://github.com/benhoyt/cdnupload/blob/master/LICENSE.txt>`_ for details.
 
 Note that prior to August 2017 it was licensed under an AGPL plus commercial license combination, but now it's completely free.
 
