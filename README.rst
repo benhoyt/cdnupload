@@ -116,7 +116,7 @@ If the CDN doesn’t have a cached version of the file, it will in turn request 
 
 Because the files are heavily cached (ideally with long expiry ties), you need to include version numbers in the filenames. cdnupload does this by appending to the filename a 16-character hash based on the file’s contents. For example, ``style.css`` might become ``style_abcdef0123456789.css``, and then ``style_a0b1c2d3e4f56789.css`` in the next revision.
 
-On one `website <https://giftyweddings.com/>`_ we run, we saw our **static file load time drop from 1500&nbsp;ms to 220&nbsp;ms** when we starting using cdnupload with the Amazon Cloudfront CDN.
+On one `website <https://giftyweddings.com/>`_ we run, we saw our **static file load time drop from 1500ms to 220ms** when we starting using cdnupload with the Amazon Cloudfront CDN.
 
 So you should use a CDN if your site gets a good amount of traffic, and you need good performance from various locations around the world. You probably *don’t* need to use a CDN if you have a small personal site.
 
