@@ -44,7 +44,7 @@ And it's **easy to integrate** in most languages, for example Python::
 Installation
 ============
 
-cdnupload is a Python package which runs under Python 3.4+ as well as Python 2.7. To install it as a command-line script and in the global Python environment, simply type::
+cdnupload is a Python package which runs under Python 3.4+ as well as Python 2.7. To install it `from PyPI <https://pypi.python.org/pypi/cdnupload>`_ as a command-line script and in the global Python environment, simply type::
 
     pip install cdnupload
 
