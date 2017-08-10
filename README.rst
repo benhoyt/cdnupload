@@ -3,10 +3,6 @@
 cdnupload
 =========
 
--------------
-Documentation
--------------
-
 
 Introduction
 ============
