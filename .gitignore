@@ -7,3 +7,4 @@ output/
 .venv/
 build/
 dist/
+.tox/

@@ -3,6 +3,14 @@
 cdnupload
 =========
 
+.. image:: https://img.shields.io/pypi/v/cdnupload.svg
+   :target: https://pypi.python.org/pypi/cdnupload
+   :alt: cdnupload on PyPI (Python Package Index)
+
+.. image:: https://travis-ci.org/benhoyt/cdnupload.svg?branch=master
+   :target: https://travis-ci.org/benhoyt/cdnupload
+   :alt: Travis CI tests
+
 
 Introduction
 ============
